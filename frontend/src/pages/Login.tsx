@@ -1,0 +1,77 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { authApi } from '../api/auth'
+import { useAuthStore } from '../stores/auth'
+
+export default function Login() {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const login = useAuthStore((s) => s.login)
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const res = await authApi.login({ username, password })
+      const { access_token, refresh_token, user } = res.data
+      login(user, access_token, refresh_token)
+      navigate('/')
+    } catch (err: any) {
+      setError(err.response?.data?.detail || '登录失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">登录 OA 系统</h1>
+        {error && (
+          <div className="mb-4 rounded bg-red-50 px-4 py-2 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">用户名</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">密码</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? '登录中...' : '登录'}
+          </button>
+        </form>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          还没有账号？{' '}
+          <Link to="/register" className="text-blue-600 hover:underline">
+            立即注册
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
+}
