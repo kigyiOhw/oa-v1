@@ -88,3 +88,154 @@ Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-t
 | `alembic` | Database migrations |
 | `redis` + `websockets` | Planned for real-time notifications (not yet wired) |
 | `ruff` / `mypy` | Linting (E, F, I, N, W, UP, B, C4, SIM rules) / strict type checking |
+
+## Runtime Rules
+
+### Architecture Constraints
+
+NEVER:
+- put business logic in FastAPI routes
+- access database directly from routes
+- commit transactions inside repositories
+- mix sync and async DB access
+- introduce new architectural patterns without checking existing code
+
+ALWAYS:
+- keep routes thin
+- keep business logic in services
+- keep repositories persistence-only
+- search existing implementation patterns before adding new code
+
+Repositories:
+- MUST use flush()
+- MUST NOT call commit()
+- MUST NOT call rollback()
+
+Services:
+- own transaction boundaries
+- define atomic operations
+
+Reason:
+workflow operations must remain atomic.
+
+---
+
+### Testing Rules
+
+Tests MUST be isolated.
+
+NEVER:
+- allow tests to hit development database
+- use real DATABASE_URL during tests
+- rely on manually created local test databases
+
+ALWAYS:
+- override get_db dependencies in tests
+- use dedicated test sessions
+- verify dependency overrides work correctly
+
+Auth flows requiring test coverage:
+- register
+- login
+- refresh token
+- disabled users
+- invalid tokens
+
+---
+
+### Authentication Rules
+
+NEVER:
+- leak whether username/email exists
+- trust refresh JWT without DB validation
+
+ALWAYS:
+- use generic auth failure messages
+- validate refresh user against database
+- verify user active state during refresh
+
+Refresh flow MUST:
+1. decode JWT
+2. validate token type
+3. load user from database
+4. verify user exists
+5. verify user is active
+6. issue new access token
+
+---
+
+### Async Rules
+
+NEVER:
+- run CPU-heavy synchronous work in async endpoints
+- run bcrypt directly inside event loop
+
+ALWAYS:
+- wrap bcrypt/password hashing using asyncio.to_thread()
+
+---
+
+### SQLAlchemy Rules
+
+ALWAYS:
+- use SQLAlchemy 2.0 style
+- use select()
+- use async sessions
+
+NEVER:
+- use legacy Query API
+- use implicit lazy loading
+- create ORM N+1 queries
+- use SELECT *
+
+PREFER:
+- selectinload
+- joinedload
+
+---
+
+### Migration Rules
+
+Models and migrations MUST remain consistent.
+
+ALWAYS:
+- ensure server_default matches model definitions
+- make migrations reversible
+
+NEVER:
+- manually change models without migration updates
+- create dangerous ALTER TABLE blindly
+
+---
+
+### Exception Rules
+
+Use domain exceptions consistently.
+
+NEVER:
+- randomly mix HTTPException and custom exceptions
+
+ALWAYS:
+- keep business exceptions in service layer
+- keep HTTP translation in API layer
+
+---
+
+### Frontend Rules
+
+ALWAYS:
+- provide 404 route
+- use ErrorBoundary
+- use Suspense for lazy routes
+
+NEVER:
+- leave blank screens on unknown routes
+- reference missing static assets
+
+---
+
+### API Protection Rules
+
+Authentication endpoints MUST have:
+- rate limiting
+- brute-force protection
