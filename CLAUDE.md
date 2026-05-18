@@ -80,9 +80,8 @@ Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-t
 | `redis` + `websockets` | Planned for real-time notifications (not yet wired) |
 | `ruff` / `mypy` | Linting (E, F, I, N, W, UP, B, C4, SIM rules) / strict type checking |
 
-## Runtime Rules
 
-## Rule Priority
+# Rule Priority
 MUST rules override all other instructions
 SHOULD rules are recommendations
 NICE rules are optional
@@ -90,7 +89,7 @@ NICE rules are optional
 # 1. Think Before Coding
 Don't assume. Don't hide confusion. Surface tradeoffs.
 
-# Before implementing:
+## Before implementing:
 State your assumptions explicitly. If uncertain, ask.
 If multiple interpretations exist, present them - don't pick silently.
 If a simpler approach exists, say so. Push back when warranted.
@@ -109,7 +108,7 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 # 3. Surgical Changes
 Touch only what you must. Clean up only your own mess.
 
-# When editing existing code:
+## When editing existing code:
 Don't "improve" adjacent code, comments, or formatting.
 Don't refactor things that aren't broken.
 Match existing style, even if you'd do it differently.
@@ -123,12 +122,12 @@ The test: Every changed line should trace directly to the user's request.
 # 4. Goal-Driven Execution
 Define success criteria. Loop until verified.
 
-# Transform tasks into verifiable goals:
+## Transform tasks into verifiable goals:
 "Add validation" → "Write tests for invalid inputs, then make them pass"
 "Fix the bug" → "Write a test that reproduces it, then make it pass"
 "Refactor X" → "Ensure tests pass before and after"
 
-# For multi-step tasks, state a brief plan:
+## For multi-step tasks, state a brief plan:
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]

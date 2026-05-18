@@ -3,6 +3,13 @@ import re
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
+class RoleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
@@ -41,6 +48,18 @@ class UserOut(UserBase):
     id: int
     is_active: bool
     is_superuser: bool
+    department_id: int | None = None
+    roles: list[RoleOut] = []
+    permissions: list[str] = []
+
+
+class UserAdminUpdate(BaseModel):
+    email: EmailStr | None = None
+    full_name: str | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
+    department_id: int | None = None
+    role_ids: list[int] | None = None
 
 
 class LoginRequest(BaseModel):

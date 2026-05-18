@@ -7,6 +7,9 @@ interface User {
   full_name: string | null
   is_active: boolean
   is_superuser: boolean
+  department_id: number | null
+  roles: { id: number; name: string }[]
+  permissions: string[]
 }
 
 interface AuthState {
@@ -15,9 +18,10 @@ interface AuthState {
   setUser: (user: User | null) => void
   login: (user: User, accessToken: string, refreshToken: string) => void
   logout: () => void
+  hasPermission: (permission: string) => boolean
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -30,5 +34,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     set({ user: null, isAuthenticated: false })
+  },
+  hasPermission: (permission: string) => {
+    const state = get()
+    if (!state.user) return false
+    if (state.user.is_superuser) return true
+    return state.user.permissions.includes(permission)
   },
 }))

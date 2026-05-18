@@ -49,7 +49,7 @@ class AuthService:
 
     async def login(self, data: LoginRequest) -> tuple[str, str, User]:
         logger.info("Login service | checking username=%s", data.username)
-        user = await self.user_repo.get_by_username(data.username)
+        user = await self.user_repo.get_by_username(data.username, with_roles=True)
         if not user:
             logger.warning("Login failed | user not found | username=%s", data.username)
             raise OAException("Incorrect username or password", status_code=401)

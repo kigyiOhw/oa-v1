@@ -1,5 +1,19 @@
 # Windows 11 环境启动指南
 
+## 前置条件
+
+- Docker Desktop（已安装并运行）
+- Python 3.11+
+- Node.js 18+
+- uv（Python 包管理器）
+
+```powershell
+# 安装 uv（如未安装）
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+---
+
 ## 方式一：PowerShell 命令行启动
 
 ### 1. 启动数据库和缓存
@@ -15,18 +29,20 @@ docker ps
 ### 2. 后端启动
 
 ```powershell
-# 进入后端目录
 cd backend
 
-# 创建虚拟环境并安装依赖
+# 首次：创建虚拟环境并安装依赖
 uv venv
 uv pip install -e ".[dev]"
 
-# 复制环境变量
+# 复制环境变量（首次）
 cp .env.example .env
 
 # 执行数据库迁移
 uv run alembic upgrade head
+
+# 种子数据（首次或需要重置时，创建默认角色和权限）
+uv run python -m app.core.seed
 
 # 启动 FastAPI 开发服务器
 uv run uvicorn app.main:app --reload --port 8000
@@ -39,10 +55,9 @@ uv run uvicorn app.main:app --reload --port 8000
 ### 3. 前端启动（另开一个 PowerShell）
 
 ```powershell
-# 进入前端目录
 cd frontend
 
-# 安装依赖
+# 首次：安装依赖
 npm install
 
 # 启动开发服务器
@@ -50,6 +65,21 @@ npm run dev
 ```
 
 前端地址：`http://localhost:5173`
+管理后台：`http://localhost:5173/admin`
+
+### 4. 初始化管理员账户
+
+注册一个普通用户后，手动在数据库中将其设为超级管理员：
+
+```powershell
+docker exec -it oa-v1-postgres-1 psql -U oa -d oa_db -c "UPDATE users SET is_superuser = true WHERE username = '你的用户名';"
+```
+
+然后给该用户分配 admin 角色：
+
+```powershell
+docker exec -it oa-v1-postgres-1 psql -U oa -d oa_db -c "INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = '你的用户名' AND r.name = 'admin';"
+```
 
 ---
 
@@ -75,27 +105,38 @@ cd backend
 uv venv
 ```
 
-### 3. 配置后端运行（FastAPI）
+### 3. 配置 Run Configurations
 
-Run → Edit Configurations → 点击 **+** 号 → **Python**
+Run → Edit Configurations，添加以下配置：
 
-填写以下参数：
+**Backend - FastAPI：**
 
 | 字段 | 值 |
 |------|-----|
 | Name | `Backend - FastAPI` |
-| Script path | `E:\Projects\Python\oa-v1\backend\.venv\Scripts\uvicorn.exe` |
+| Module name | `uvicorn` |
 | Parameters | `app.main:app --reload --port 8000` |
 | Working directory | `E:\Projects\Python\oa-v1\backend` |
-| Environment variables | 点击右侧图标添加：`DATABASE_URL=postgresql+asyncpg://oa:oa_secret@localhost:5432/oa_db;REDIS_URL=redis://localhost:6379/0;SECRET_KEY=dev-secret-key` |
 
-> **注意**：Script path 也可以指向 `python.exe`，Parameters 写成 `uvicorn app.main:app --reload --port 8000`
+**Alembic - Upgrade：**
 
-### 4. 配置前端运行
+| 字段 | 值 |
+|------|-----|
+| Name | `Alembic - Upgrade` |
+| Module name | `alembic` |
+| Parameters | `upgrade head` |
+| Working directory | `E:\Projects\Python\oa-v1\backend` |
 
-Run → Edit Configurations → 点击 **+** 号 → **npm**
+**Seed Data：**
 
-填写以下参数：
+| 字段 | 值 |
+|------|-----|
+| Name | `Seed Data` |
+| Module name | `app.core.seed` |
+| Parameters | （空） |
+| Working directory | `E:\Projects\Python\oa-v1\backend` |
+
+**Frontend - Vite：**
 
 | 字段 | 值 |
 |------|-----|
@@ -103,29 +144,18 @@ Run → Edit Configurations → 点击 **+** 号 → **npm**
 | package.json | `E:\Projects\Python\oa-v1\frontend\package.json` |
 | Command | `run` |
 | Scripts | `dev` |
-| Node interpreter | 选择你的 Node.js 路径（如 `C:\Program Files\nodejs\node.exe`） |
+| Node interpreter | Node.js 路径（如 `C:\Program Files\nodejs\node.exe`） |
 
-### 5. 配置 Alembic 迁移（可选）
-
-Run → Edit Configurations → 点击 **+** 号 → **Python**
-
-| 字段 | 值 |
-|------|-----|
-| Name | `Alembic - Upgrade` |
-| Script path | `E:\Projects\Python\oa-v1\backend\.venv\Scripts\alembic.exe` |
-| Parameters | `upgrade head` |
-| Working directory | `E:\Projects\Python\oa-v1\backend` |
-| Environment variables | 同上添加 DATABASE_URL 等 |
-
-### 6. 启动顺序
+### 4. 启动顺序
 
 1. 确保 Docker Desktop 正在运行
 2. 在 PowerShell 执行 `docker-compose up -d`
-3. 点击 PyCharm 右上角运行 `Alembic - Upgrade`（首次或模型变更后）
-4. 点击运行 `Backend - FastAPI`
-5. 点击运行 `Frontend - Vite`
+3. 运行 `Alembic - Upgrade`（首次或模型变更后）
+4. 运行 `Seed Data`（首次或需要重置权限数据时）
+5. 运行 `Backend - FastAPI`
+6. 运行 `Frontend - Vite`
 
-### 7. 常见问题
+### 5. 常见问题
 
 **问题：uv 命令找不到**
 - 安装 uv：`powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
@@ -148,3 +178,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **问题：前端代理不生效**
 - `vite.config.ts` 已配置 `/api` 代理到 `localhost:8000`
 - 确保访问的是 `http://localhost:5173` 而不是 `127.0.0.1:5173`
+
+**问题：访问管理后台提示权限不足**
+- 确认已运行 `uv run python -m app.core.seed`
+- 确认用户已被设为 superuser 或分配了 admin 角色

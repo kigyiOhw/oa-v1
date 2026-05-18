@@ -3,10 +3,12 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import OAException
 from app.db.base import AsyncSessionLocal
-from app.models.user import User
+from app.models.user import Permission, User, role_permissions, user_roles
 from app.repositories.user import UserRepository
 from app.utils.security import decode_token
 
@@ -48,7 +50,7 @@ async def get_current_user(
         )
 
     user_repo = UserRepository(db)
-    user = await user_repo.get_by_id(int(user_id_str))
+    user = await user_repo.get_by_id_with_roles(int(user_id_str))
     if user is None:
         logger.warning("Auth failed | user not found | user_id=%s", user_id_str)
         raise HTTPException(
@@ -69,3 +71,28 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def require_permission(permission: str):
+    async def _check(current_user: CurrentUser, db: DBDep) -> None:
+        if current_user.is_superuser:
+            return
+        stmt = (
+            select(Permission.code)
+            .join(role_permissions, Permission.id == role_permissions.c.permission_id)
+            .join(user_roles, role_permissions.c.role_id == user_roles.c.role_id)
+            .where(user_roles.c.user_id == current_user.id)
+        )
+        result = await db.execute(stmt)
+        user_perms = {row[0] for row in result.fetchall()}
+        if permission not in user_perms:
+            raise OAException("Insufficient permissions", status_code=403)
+    return Depends(_check)
+
+
+async def require_superuser(current_user: CurrentUser) -> None:
+    if not current_user.is_superuser:
+        raise OAException("Insufficient permissions", status_code=403)
+
+
+RequireSuperuser = Annotated[None, Depends(require_superuser)]

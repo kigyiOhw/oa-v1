@@ -23,6 +23,9 @@ export interface AuthResponse {
     full_name: string | null
     is_active: boolean
     is_superuser: boolean
+    department_id: number | null
+    roles: { id: number; name: string }[]
+    permissions: string[]
   }
 }
 
