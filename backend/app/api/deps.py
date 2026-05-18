@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -9,6 +10,7 @@ from app.models.user import User
 from app.repositories.user import UserRepository
 from app.utils.security import decode_token
 
+logger = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
@@ -27,24 +29,42 @@ async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: DBDep,
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
     payload = decode_token(token)
     if payload is None or payload.get("type") != "access":
-        raise credentials_exception
+        logger.warning("Auth failed | invalid token type or decode error")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user_id_str = payload.get("sub")
     if user_id_str is None:
-        raise credentials_exception
+        logger.warning("Auth failed | missing sub in token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     user_repo = UserRepository(db)
     user = await user_repo.get_by_id(int(user_id_str))
-    if user is None or not user.is_active:
-        raise credentials_exception
+    if user is None:
+        logger.warning("Auth failed | user not found | user_id=%s", user_id_str)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        logger.warning("Auth failed | inactive user | user_id=%s", user_id_str)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
+    logger.debug("Auth success | user_id=%s username=%s", user.id, user.username)
     return user
 
 

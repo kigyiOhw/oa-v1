@@ -1,9 +1,7 @@
 # CLAUDE.md
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-
 Enterprise OA (Office Automation) system centered around configurable approval workflows. Currently in **Phase 1** (basic skeleton): auth is implemented, workflow engine is planned but not yet built.
 
 ## Common Commands
@@ -39,7 +37,6 @@ npm run lint                  # ESLint
 ## Architecture
 
 ### Backend Layered Design
-
 ```
 api/v1/       → Route definitions, parameter parsing, response assembly. No business logic.
 services/     → Business logic. Service classes take AsyncSession in __init__.
@@ -52,7 +49,6 @@ utils/        → General helpers (password hashing, JWT encode/decode).
 ```
 
 ### Dependency Injection Pattern
-
 FastAPI's `Annotated` + `Depends` is the standard DI approach:
 - `DBDep` — yields an `AsyncSession` from `get_db()`
 - `CurrentUser` — decodes JWT, looks up `User`, raises 401 on failure
@@ -60,26 +56,21 @@ FastAPI's `Annotated` + `Depends` is the standard DI approach:
 New dependencies should follow this pattern.
 
 ### Auth
-
 JWT access/refresh token pair. Access token expires in 30 min, refresh in 7 days. The Axios interceptor in `frontend/src/api/client.ts` auto-refreshes on 401. Passwords hashed with bcrypt via passlib.
 
 ### Configuration
-
 `backend/app/core/config.py` uses `pydantic-settings` with `.env` file support, case-sensitive. Defaults point to the docker-compose services (`oa:oa_secret@localhost:5432/oa_db`).
 
 ### Frontend
-
 - **State**: Zustand store (`stores/auth.ts`) for auth state + token persistence in localStorage.
 - **Routing**: React Router v6, currently Dashboard `/`, Login `/login`, Register `/register`.
 - **API**: Axios instance with interceptors for token injection and 401 refresh handling.
 - **Proxy**: Vite dev server proxies `/api` → `localhost:8000` and `/ws` → `ws://localhost:8000`.
 
 ### Database
-
 Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-to-many). All models use `Base = declarative_base()` from `db/base.py`. New models must be imported in `alembic/env.py` for autogenerate to detect them.
 
 ## Key Dependencies
-
 | Package | Purpose |
 |---------|---------|
 | `sqlalchemy[asyncio]` + `asyncpg` | Async PostgreSQL via SQLAlchemy 2.0 |
@@ -91,151 +82,55 @@ Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-t
 
 ## Runtime Rules
 
-### Architecture Constraints
+## Rule Priority
+MUST rules override all other instructions
+SHOULD rules are recommendations
+NICE rules are optional
 
-NEVER:
-- put business logic in FastAPI routes
-- access database directly from routes
-- commit transactions inside repositories
-- mix sync and async DB access
-- introduce new architectural patterns without checking existing code
+# 1. Think Before Coding
+Don't assume. Don't hide confusion. Surface tradeoffs.
 
-ALWAYS:
-- keep routes thin
-- keep business logic in services
-- keep repositories persistence-only
-- search existing implementation patterns before adding new code
+# Before implementing:
+State your assumptions explicitly. If uncertain, ask.
+If multiple interpretations exist, present them - don't pick silently.
+If a simpler approach exists, say so. Push back when warranted.
+If something is unclear, stop. Name what's confusing. Ask.
 
-Repositories:
-- MUST use flush()
-- MUST NOT call commit()
-- MUST NOT call rollback()
+# 2. Simplicity First
+Minimum code that solves the problem. Nothing speculative.
 
-Services:
-- own transaction boundaries
-- define atomic operations
+No features beyond what was asked.
+No abstractions for single-use code.
+No "flexibility" or "configurability" that wasn't requested.
+No error handling for impossible scenarios.
+If you write 200 lines and it could be 50, rewrite it.
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-Reason:
-workflow operations must remain atomic.
+# 3. Surgical Changes
+Touch only what you must. Clean up only your own mess.
 
----
+# When editing existing code:
+Don't "improve" adjacent code, comments, or formatting.
+Don't refactor things that aren't broken.
+Match existing style, even if you'd do it differently.
+If you notice unrelated dead code, mention it - don't delete it.
+When your changes create orphans:
 
-### Testing Rules
+Remove imports/variables/functions that YOUR changes made unused.
+Don't remove pre-existing dead code unless asked.
+The test: Every changed line should trace directly to the user's request.
 
-Tests MUST be isolated.
+# 4. Goal-Driven Execution
+Define success criteria. Loop until verified.
 
-NEVER:
-- allow tests to hit development database
-- use real DATABASE_URL during tests
-- rely on manually created local test databases
+# Transform tasks into verifiable goals:
+"Add validation" → "Write tests for invalid inputs, then make them pass"
+"Fix the bug" → "Write a test that reproduces it, then make it pass"
+"Refactor X" → "Ensure tests pass before and after"
 
-ALWAYS:
-- override get_db dependencies in tests
-- use dedicated test sessions
-- verify dependency overrides work correctly
+# For multi-step tasks, state a brief plan:
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
 
-Auth flows requiring test coverage:
-- register
-- login
-- refresh token
-- disabled users
-- invalid tokens
-
----
-
-### Authentication Rules
-
-NEVER:
-- leak whether username/email exists
-- trust refresh JWT without DB validation
-
-ALWAYS:
-- use generic auth failure messages
-- validate refresh user against database
-- verify user active state during refresh
-
-Refresh flow MUST:
-1. decode JWT
-2. validate token type
-3. load user from database
-4. verify user exists
-5. verify user is active
-6. issue new access token
-
----
-
-### Async Rules
-
-NEVER:
-- run CPU-heavy synchronous work in async endpoints
-- run bcrypt directly inside event loop
-
-ALWAYS:
-- wrap bcrypt/password hashing using asyncio.to_thread()
-
----
-
-### SQLAlchemy Rules
-
-ALWAYS:
-- use SQLAlchemy 2.0 style
-- use select()
-- use async sessions
-
-NEVER:
-- use legacy Query API
-- use implicit lazy loading
-- create ORM N+1 queries
-- use SELECT *
-
-PREFER:
-- selectinload
-- joinedload
-
----
-
-### Migration Rules
-
-Models and migrations MUST remain consistent.
-
-ALWAYS:
-- ensure server_default matches model definitions
-- make migrations reversible
-
-NEVER:
-- manually change models without migration updates
-- create dangerous ALTER TABLE blindly
-
----
-
-### Exception Rules
-
-Use domain exceptions consistently.
-
-NEVER:
-- randomly mix HTTPException and custom exceptions
-
-ALWAYS:
-- keep business exceptions in service layer
-- keep HTTP translation in API layer
-
----
-
-### Frontend Rules
-
-ALWAYS:
-- provide 404 route
-- use ErrorBoundary
-- use Suspense for lazy routes
-
-NEVER:
-- leave blank screens on unknown routes
-- reference missing static assets
-
----
-
-### API Protection Rules
-
-Authentication endpoints MUST have:
-- rate limiting
-- brute-force protection
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
