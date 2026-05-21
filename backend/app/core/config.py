@@ -15,5 +15,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
 
+    STORAGE_BACKEND: str = "local"
+    UPLOAD_DIR: str = "./uploads"
+
 
 settings = Settings()

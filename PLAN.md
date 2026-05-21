@@ -12,7 +12,7 @@
 |------|------|------|
 | 后端 | Python + FastAPI | 异步高性能 API |
 | ORM | SQLAlchemy 2.0 (async) | 数据库交互 |
-| 数据库 | PostgreSQL 15+ | 主数据库，支持 JSONB 存储动态表单 |
+| 数据库 | PostgreSQL 16 | 主数据库，支持 JSONB 存储动态表单 |
 | 迁移 | Alembic | 数据库版本管理 |
 | 缓存 | Redis | Session、锁、热点数据缓存 |
 | 前端 | React 18 + TypeScript | 用户界面 |
@@ -70,15 +70,26 @@ departments           # 部门组织架构
 ### 4.2 工作流引擎 (核心)
 
 ```
-workflow_defs         # 流程定义 (请假流程、报销流程...)
-workflow_nodes        # 流程节点定义 (提交->直属经理审批->HR审批)
-workflow_transitions  # 节点流转规则 (同意/驳回/转交)
+workflow_defs         # 流程定义，节点和流转规则存于 definition(JSONB)
 workflow_instances    # 流程实例 (张三的请假单)
 workflow_tasks        # 待办任务 (待李四审批)
 workflow_history      # 审批历史记录
 ```
 
-**关键设计**：流程定义采用预配置模式（非拖拽式），通过 JSON 描述节点和流转规则，存储于 `workflow_defs.definition` 字段。
+**关键设计**：流程定义采用预配置模式（非拖拽式），节点和流转规则通过 JSON 描述，存储于 `workflow_defs.definition` 字段。不创建独立的 `workflow_nodes` 和 `workflow_transitions` 表，解析在应用层完成。
+
+### 4.3 公司门户
+
+```
+announcements         # 公告（Markdown 内容，支持发布/置顶）
+media_files           # 媒体文件（图片/视频，文件路径 + 类型）
+settings              # 键值对配置（公司信息、内网快捷链接等）
+```
+
+**设计要点：**
+- 媒体存储采用策略模式（`StorageBackend` 抽象），测试环境用本地磁盘，生产可切换 OSS/S3/文件服务器
+- 快捷入口（请假/报销/审批/通知）由前端按用户权限硬编码显示，无需额外后端接口
+- 内网导航链接存于 `settings` 表（`key="quick_links"`，值为 JSON 数组），管理员可在后台配置
 
 ### 4.3 表单系统
 
@@ -100,13 +111,11 @@ notifications         # 消息通知
 ## 5. 后端架构 (FastAPI)
 
 ### 5.1 分层设计
-
 - **API 层** (`api/`): 只负责路由定义、依赖注入、参数校验、响应组装，不包含业务逻辑。
 - **Service 层** (`services/`): 核心业务逻辑。工作流引擎的核心代码位于 `services/workflow/`。
 - **Repository 层** (`repositories/`): 数据库 CRUD 封装，按模型划分。
 
 ### 5.2 核心机制
-
 - **依赖注入**: FastAPI 原生 DI，用于获取 DB Session、当前用户、权限校验。
 - **统一异常**: 自定义 `OAException` -> 全局 Exception Handler -> 标准 JSON 响应。
 - **认证**: JWT (access_token + refresh_token)，密码 bcrypt 加密。
@@ -135,77 +144,90 @@ async def approve_task(user, task_id, action, comment):
 ## 6. 前端架构 (React)
 
 ### 6.1 页面结构
-
 - **工作台** (`/dashboard`): 我的待办、我已办、我发起的。
 - **流程中心** (`/flows/*`): 各业务模块入口 (请假、报销...)。
 - **审批页面** (`/approve/:taskId`): 通用审批界面，根据表单模板动态渲染。
 - **管理后台** (`/admin/*`): 流程配置、表单设计、用户管理（管理员可见）。
 
 ### 6.2 动态表单渲染
-
 前端根据后端返回的 `form_template.fields` 定义，动态渲染表单组件。支持字段类型：`input`, `textarea`, `number`, `date`, `datetime`, `select`, `file`, `user-select`。
 
 ### 6.3 API 封装
-
 Axios 拦截器统一处理：Token 注入、401 跳转、错误提示、Loading 状态。
 
 ## 7. 开发阶段规划
 
-### Phase 1: 基础骨架 (Week 1)
-- [ ] Docker Compose 搭建 (PG + Redis + Backend + Frontend)
-- [ ] FastAPI 项目初始化：目录结构、配置、数据库连接、Alembic
-- [ ] React + Vite 项目初始化：路由、Axios、Tailwind CSS、Zustand
-- [ ] 用户注册/登录/登出 API + 页面
-- [ ] JWT 认证流程跑通
+### Phase 1: 基础骨架 (Week 1) ✅ 已完成
+- [✓] Docker Compose 搭建 (PG + Redis + Backend + Frontend)
+- [✓] FastAPI 项目初始化：目录结构、配置、数据库连接、Alembic
+- [✓] React + Vite 项目初始化：路由、Axios、Tailwind CSS、Zustand
+- [✓] 用户注册/登录/登出 API + 页面
+- [✓] JWT 认证流程跑通
 
-### Phase 2: RBAC 与组织架构 (Week 2)
-- [ ] 角色、权限模型设计
-- [ ] 部门树形结构 CRUD
-- [ ] 用户管理后台页面
-- [ ] 前端路由权限控制
+### Phase 2: RBAC 与组织架构 (Week 2) ✅ 已完成
+- [✓] 角色、权限模型设计
+- [✓] 部门树形结构 CRUD
+- [✓] 用户管理后台页面
+- [✓] 前端路由权限控制
 
-### Phase 3: 工作流引擎核心 (Week 3)
-- [ ] 流程定义数据结构 + 管理 API
-- [ ] 流程实例创建、任务生成逻辑
-- [ ] 审批流转 (同意/驳回) 核心逻辑
-- [ ] 审批历史记录
+### Phase 3: 工作流引擎核心 (Week 3) ✅ 已完成
+- [✓] 流程定义数据结构 + 管理 API
+- [✓] 流程实例创建、任务生成逻辑
+- [✓] 审批流转 (同意/驳回) 核心逻辑
+- [✓] 审批历史记录
+- [✓] 审批人解析策略 (initiator / manager / role / user)
+- [✓] 前端页面 (流程定义管理、我的待办、我发起的、实例详情)
+- [✓] 后端测试 (18 个测试用例全部通过)
 
-### Phase 4: 请假模块端到端 (Week 4)
+### Phase 4: 公司门户首页 (Week 4) ✅ 已完成
+- [✓] 公告系统（Markdown 内容，发布/置顶，管理 CRUD）
+- [✓] 媒体库（图片/视频上传，可插拔存储后端：本地/云存储/文件服务器）
+- [✓] 存储抽象层（StorageBackend 策略模式，LocalStorage 默认实现）
+- [✓] 公司信息配置（键值对 settings 表，名称/Logo/简介）
+- [✓] 快捷入口区（请假/报销/审批/通知等常用功能图标，登录后才可进入）
+- [✓] 内网导航链接（管理员可配置的外部系统 URL）
+- [✓] Dashboard 重设计：**首页公开**（无需登录），登录后额外显示个人统计卡片
+- [✓] 管理后台（公告管理、媒体管理、公司设置、快捷链接配置）
+- [✓] 后端测试（17 个测试用例全部通过）
+
+### Phase 5: 请假模块端到端 (Week 5)
 - [ ] 请假表单模板配置
 - [ ] 请假申请提交 -> 审批 -> 完成全流程
-- [ ] 我的待办/已办/我发起的 列表页面
 - [ ] WebSocket 实时通知（新待办、审批结果推送）
 
-### Phase 5: 报销与加班模块 (Week 5)
+### Phase 6: 报销与加班模块 (Week 6)
 - [ ] 复用工作流引擎，配置报销、加班流程
 - [ ] 报销单附件上传 (发票)
 - [ ] 加班申请与请假联动校验
 
-### Phase 6: 完善与优化 (Week 6+)
+### Phase 7: 完善与优化 (Week 7+)
 - [ ] 表单字段校验规则增强
 - [ ] 流程图可视化展示
 - [ ] 数据权限（部门隔离）
 - [ ] 单元测试覆盖核心逻辑
 - [ ] 消息已读、通知中心历史
 
-## 8. 本地开发启动方式 (规划中)
+## 8. 本地开发启动方式
 
 ```bash
 # 启动基础设施
-docker-compose up -d postgres redis
+docker-compose up -d
 
 # 后端 (backend/)
 cd backend
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload --port 8000
+uv pip install -e ".[dev]"      # 首次
+uv run alembic upgrade head     # 执行迁移
+uv run python -m app.core.seed  # 种子数据（首次）
+uv run uvicorn app.main:app --reload --port 8000
 
 # 前端 (frontend/)
 cd frontend
-npm install
+npm install                     # 首次
 npm run dev
 ```
 
+详细说明见 `SETUP_GUIDE.md`。
+
 ---
 
-**下一步**：确认以上规划后，将从 **Phase 1** 开始，先生成完整的目录结构和基础代码。
+**下一步**：Phase 5 — 请假模块端到端。

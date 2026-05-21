@@ -1,0 +1,151 @@
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { workflowApi, InstanceItem, HistoryItem } from '../../api/workflow'
+
+export default function InstanceDetail() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [instance, setInstance] = useState<InstanceItem | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchInstance = async () => {
+    try {
+      const res = await workflowApi.getInstance(Number(id))
+      setInstance(res.data)
+    } catch {
+      alert('Instance not found')
+      navigate('/workflow/my')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInstance()
+  }, [id])
+
+  const handleCancel = async () => {
+    if (!confirm('Cancel this workflow instance?')) return
+    await workflowApi.cancelInstance(Number(id))
+    fetchInstance()
+  }
+
+  const statusLabel = (s: string) => {
+    const map: Record<string, string> = {
+      pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled',
+    }
+    return map[s] || s
+  }
+
+  const nodeLabel = (nodeId: string) => {
+    if (!instance?.workflow_def?.definition) return nodeId
+    const nodes = (instance.workflow_def.definition as any).nodes || []
+    const node = nodes.find((n: any) => n.id === nodeId)
+    return node?.label || nodeId
+  }
+
+  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (!instance) return null
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <button
+        className="text-blue-600 hover:underline text-sm mb-4 inline-block"
+        onClick={() => navigate('/workflow/my')}
+      >
+        &larr; Back to My Instances
+      </button>
+
+      <div className="bg-white rounded-lg border p-6 mb-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold mb-2">{instance.title}</h1>
+            <p className="text-sm text-gray-500">
+              Workflow: {instance.workflow_def?.name || 'Unknown'} &middot; v{instance.workflow_def?.version}
+            </p>
+          </div>
+          <div className="text-right">
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+              instance.status === 'pending' ? 'bg-blue-100 text-blue-700' :
+              instance.status === 'approved' ? 'bg-green-100 text-green-700' :
+              instance.status === 'rejected' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-600'
+            }`}>
+              {statusLabel(instance.status)}
+            </span>
+          </div>
+        </div>
+        {instance.status === 'pending' && (
+          <button
+            onClick={handleCancel}
+            className="mt-4 px-3 py-1 border border-red-300 text-red-600 rounded text-sm hover:bg-red-50"
+          >
+            Cancel Instance
+          </button>
+        )}
+      </div>
+
+      {instance.tasks && instance.tasks.length > 0 && (
+        <div className="bg-white rounded-lg border p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-3">Current Tasks</h2>
+          <table className="w-full text-sm border">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left">Node</th>
+                <th className="px-3 py-2 text-left">Assignee</th>
+                <th className="px-3 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {instance.tasks.map((t) => (
+                <tr key={t.id} className="border-t">
+                  <td className="px-3 py-2">{nodeLabel(t.node_id)}</td>
+                  <td className="px-3 py-2 text-gray-500">User #{t.assignee_id}</td>
+                  <td className="px-3 py-2">{statusLabel(t.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {instance.history && instance.history.length > 0 && (
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-lg font-semibold mb-3">Approval History</h2>
+          <Timeline history={instance.history} nodeLabel={nodeLabel} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Timeline({ history, nodeLabel }: { history: HistoryItem[]; nodeLabel: (id: string) => string }) {
+  const actionLabel = (a: string) => {
+    const map: Record<string, string> = { submit: 'Submitted', approve: 'Approved', reject: 'Rejected', cancel: 'Cancelled' }
+    return map[a] || a
+  }
+
+  const actionColor = (a: string) => {
+    const map: Record<string, string> = { submit: 'text-blue-500', approve: 'text-green-500', reject: 'text-red-500', cancel: 'text-gray-400' }
+    return map[a] || ''
+  }
+
+  return (
+    <div className="space-y-3">
+      {[...history].reverse().map((h) => (
+        <div key={h.id} className="flex gap-3 text-sm">
+          <div className="w-24 text-right text-gray-400 shrink-0">
+            {new Date(h.created_at).toLocaleString()}
+          </div>
+          <div className={`font-medium ${actionColor(h.action)}`}>
+            {actionLabel(h.action)}
+          </div>
+          <div className="text-gray-600">
+            {nodeLabel(h.node_id)}
+          </div>
+          {h.comment && <div className="text-gray-400 italic">— "{h.comment}"</div>}
+        </div>
+      ))}
+    </div>
+  )
+}

@@ -39,7 +39,8 @@ class AuthService:
         )
         await self.user_repo.create(user)
         await self.session.commit()
-        await self.session.refresh(user)
+        # Eager-load roles to prevent lazy-load errors during serialization
+        user = await self.user_repo.get_by_id_with_roles(user.id)
         logger.info("Register service | user created | user_id=%s username=%s", user.id, user.username)
 
         access_token = create_access_token({"sub": str(user.id)})

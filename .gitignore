@@ -55,6 +55,17 @@ logs/
 *.log
 npm-debug.log*
 
+docs
+
+# Claude Code internal files
+.claude/context/
+.claude/memory/
+.claude/plans/
+
+# Uploaded media files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # Alembic
 # alembic/versions/*.py
 # !alembic/versions/.gitkeep

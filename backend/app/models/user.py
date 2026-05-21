@@ -60,6 +60,9 @@ class User(Base):
     department_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("departments.id", ondelete="SET NULL")
     )
+    manager_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL")
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
@@ -68,6 +71,9 @@ class User(Base):
     roles: Mapped[list["Role"]] = relationship("Role", secondary=user_roles, back_populates="users")
     department: Mapped["Department | None"] = relationship(
         "Department", back_populates="users"
+    )
+    manager: Mapped["User | None"] = relationship(
+        "User", remote_side="User.id", backref="subordinates"
     )
 
     @property

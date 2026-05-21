@@ -5,6 +5,10 @@ const navItems = [
   { to: '/admin/users', label: 'Users', permission: 'user:read' },
   { to: '/admin/roles', label: 'Roles', permission: 'role:read' },
   { to: '/admin/departments', label: 'Departments', permission: 'dept:read' },
+  { to: '/admin/workflow-defs', label: 'Workflow Defs', permission: 'workflow_def:read' },
+  { to: '/admin/announcements', label: 'Announcements', permission: 'announcement:read' },
+  { to: '/admin/media', label: 'Media', permission: 'media:read' },
+  { to: '/admin/settings', label: 'Company Settings', permission: 'announcement:update' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

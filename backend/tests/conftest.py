@@ -1,26 +1,34 @@
+import uuid
 from typing import AsyncGenerator
 
 import asyncpg
 import pytest_asyncio
 import httpx
 from httpx import AsyncClient
+from slowapi import Limiter
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.api.deps import get_db
 from app.db.base import Base
-from app.main import app as fastapi_app
 
-TEST_DATABASE_URL = "postgresql+asyncpg://oa:oa_secret@localhost:5432/oa_db_test"
+TEST_DATABASE_URL = "postgresql+asyncpg://oa:oa_secret@localhost:5433/oa_db_test"
 
-engine = create_async_engine(TEST_DATABASE_URL, echo=False, future=True)
+engine = create_async_engine(TEST_DATABASE_URL, echo=False, future=True, poolclass=NullPool)
 TestingSessionLocal = async_sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
 
+# Disable rate limiting during tests by replacing the limiter before importing main
+import app.core.limiter as limiter_module
+limiter_module.limiter = Limiter(key_func=lambda: str(uuid.uuid4()), storage_uri="memory://")
+
+from app.main import app as fastapi_app
+
 
 async def _ensure_test_db() -> None:
     conn = await asyncpg.connect(
-        host="localhost", port=5432, user="oa", password="oa_secret", database="postgres"
+        host="localhost", port=5433, user="oa", password="oa_secret", database="postgres"
     )
     try:
         await conn.execute("CREATE DATABASE oa_db_test")
