@@ -38,6 +38,12 @@ class WorkflowDefRepository:
         await self.session.delete(wf_def)
         await self.session.flush()
 
+    async def get_by_name(self, name: str) -> WorkflowDef | None:
+        result = await self.session.execute(
+            select(WorkflowDef).where(WorkflowDef.name == name, WorkflowDef.is_active == True)
+        )
+        return result.scalar_one_or_none()
+
     async def count_active_instances(self, def_id: int) -> int:
         from app.models.workflow import WorkflowInstance
 

@@ -1,9 +1,11 @@
 import logging
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
-from app.models.user import User
+from app.models.employee import EmployeeProfile
+from app.models.user import Role, User
 from app.repositories.user import UserRepository
 from app.schemas.auth import LoginRequest, UserCreate
 from app.utils.security import (
@@ -22,15 +24,15 @@ class AuthService:
         self.user_repo = UserRepository(session)
 
     async def register(self, data: UserCreate) -> tuple[str, str, User]:
-        logger.info("Register service | checking username=%s email=%s", data.username, data.email)
+        logger.info("----------AuthService.register, start, username=%s, email=%s", data.username, data.email)
         existing = await self.user_repo.get_by_username(data.username)
         if not existing:
             existing = await self.user_repo.get_by_email(data.email)
         if existing:
-            logger.warning("Register failed | duplicate username or email | username=%s email=%s", data.username, data.email)
+            logger.warning("----------AuthService.register, duplicate, username=%s, email=%s", data.username, data.email)
             raise OAException("Username or email already registered", status_code=400)
 
-        logger.debug("Register service | creating user | username=%s", data.username)
+        logger.info("----------AuthService.register, creating_user, username=%s", data.username)
         user = User(
             username=data.username,
             email=data.email,
@@ -38,30 +40,43 @@ class AuthService:
             full_name=data.full_name,
         )
         await self.user_repo.create(user)
+
+        # Auto-create employee profile
+        self.session.add(EmployeeProfile(user_id=user.id))
+        await self.session.flush()
+
+        # Assign default "user" role
+        logger.info("----------AuthService.register, assigning_default_role, user_id=%s", user.id)
+        user_role = (await self.session.execute(select(Role).where(Role.name == "user"))).scalar_one_or_none()
+        if user_role:
+            user.roles.append(user_role)
+            await self.session.flush()
+            logger.info("----------AuthService.register, role_assigned, user_id=%s, role=%s", user.id, user_role.name)
+        else:
+            logger.warning("----------AuthService.register, default_role_not_found, user_id=%s", user.id)
+
         await self.session.commit()
-        # Eager-load roles to prevent lazy-load errors during serialization
         user = await self.user_repo.get_by_id_with_roles(user.id)
-        logger.info("Register service | user created | user_id=%s username=%s", user.id, user.username)
+        logger.info("----------AuthService.register, done, user_id=%s, username=%s", user.id, user.username)
 
         access_token = create_access_token({"sub": str(user.id)})
         refresh_token = create_refresh_token({"sub": str(user.id)})
-        logger.debug("Register service | tokens generated | user_id=%s", user.id)
         return access_token, refresh_token, user
 
     async def login(self, data: LoginRequest) -> tuple[str, str, User]:
-        logger.info("Login service | checking username=%s", data.username)
+        logger.info("----------AuthService.login, start, username=%s", data.username)
         user = await self.user_repo.get_by_username(data.username, with_roles=True)
         if not user:
-            logger.warning("Login failed | user not found | username=%s", data.username)
+            logger.warning("----------AuthService.login, user_not_found, username=%s", data.username)
             raise OAException("Incorrect username or password", status_code=401)
         if not await verify_password_async(data.password, user.hashed_password):
-            logger.warning("Login failed | wrong password | username=%s", data.username)
+            logger.warning("----------AuthService.login, wrong_password, username=%s", data.username)
             raise OAException("Incorrect username or password", status_code=401)
         if not user.is_active:
-            logger.warning("Login failed | inactive user | username=%s", data.username)
+            logger.warning("----------AuthService.login, user_inactive, username=%s", data.username)
             raise OAException("User is inactive", status_code=403)
 
-        logger.info("Login service | success | user_id=%s username=%s", user.id, user.username)
+        logger.info("----------AuthService.login, done, user_id=%s, username=%s", user.id, user.username)
         access_token = create_access_token({"sub": str(user.id)})
         refresh_token = create_refresh_token({"sub": str(user.id)})
         return access_token, refresh_token, user

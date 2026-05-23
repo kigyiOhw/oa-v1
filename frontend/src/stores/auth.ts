@@ -1,5 +1,12 @@
 import { create } from 'zustand'
 
+export interface RoleInfo {
+  id: number
+  name: string
+  role_type: string
+  admin_scope: string | null
+}
+
 interface User {
   id: number
   username: string
@@ -8,8 +15,23 @@ interface User {
   is_active: boolean
   is_superuser: boolean
   department_id: number | null
-  roles: { id: number; name: string }[]
+  roles: RoleInfo[]
   permissions: string[]
+}
+
+export function getAdminLevel(user: User | null): 'super_admin' | 'module_admin' | 'dept_admin' | 'user' {
+  if (!user) return 'user'
+  if (user.is_superuser) return 'super_admin'
+  for (const role of user.roles) {
+    if (role.role_type === 'super_admin') return 'super_admin'
+  }
+  for (const role of user.roles) {
+    if (role.role_type === 'module_admin') return 'module_admin'
+  }
+  for (const role of user.roles) {
+    if (role.role_type === 'dept_admin') return 'dept_admin'
+  }
+  return 'user'
 }
 
 interface AuthState {

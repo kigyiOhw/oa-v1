@@ -41,8 +41,11 @@ cp .env.example .env
 # 执行数据库迁移
 uv run alembic upgrade head
 
-# 种子数据（首次或需要重置时，创建默认角色、权限、公司信息、公告、快捷链接）
+# 种子数据（首次或需要重置时，创建默认角色、权限、公司信息、公告、快捷链接、请假审批流程）
 uv run python -m app.core.seed
+
+# 测试/演示数据（可选，插入 25 用户、部门、工作流实例、请假记录、公告等测试数据）
+uv run python -m app.core.seed_test_data
 
 # 启动 FastAPI 开发服务器
 uv run uvicorn app.main:app --reload --port 8000
@@ -69,16 +72,77 @@ npm run dev
 
 ### 4. 初始化管理员账户
 
-注册一个普通用户后，手动在数据库中将其设为超级管理员：
+注册一个普通用户后，手动在数据库中将其设为超级管理员并分配 super_admin 角色：
 
 ```powershell
+# 设为超级管理员
 docker exec -it oa-postgres psql -U oa -d oa_db -c "UPDATE users SET is_superuser = true WHERE username = '你的用户名';"
+
+# 分配 super_admin 角色
+docker exec -it oa-postgres psql -U oa -d oa_db -c "INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = '你的用户名' AND r.name = 'super_admin';"
 ```
 
-然后给该用户分配 admin 角色：
+若还需分配部门管理员角色（数据范围限定本部门）：
+```powershell
+docker exec -it oa-postgres psql -U oa -d oa_db -c "INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = '你的用户名' AND r.name = 'dept_admin';"
+```
+
+---
+
+## 后台运行与关闭
+
+### 一键启动（后台运行）
 
 ```powershell
-docker exec -it oa-postgres psql -U oa -d oa_db -c "INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = '你的用户名' AND r.name = 'admin';"
+# 1. 启动数据库（后台常驻）
+docker-compose up -d
+
+# 2. 启动后端（隐藏窗口，后台运行）
+Start-Process -WindowStyle Hidden -FilePath "uv" `
+  -ArgumentList "run","uvicorn","app.main:app","--reload","--port","8000" `
+  -WorkingDirectory "$PWD\backend"
+
+# 3. 启动前端（隐藏窗口，后台运行）
+Start-Process -WindowStyle Hidden -FilePath "npm" `
+  -ArgumentList "run","dev" `
+  -WorkingDirectory "$PWD\frontend"
+```
+
+或者开新窗口（方便查看日志）：
+
+```powershell
+Start-Process powershell -ArgumentList "-NoExit","-Command","cd $PWD\backend; uv run uvicorn app.main:app --reload --port 8000"
+Start-Process powershell -ArgumentList "-NoExit","-Command","cd $PWD\frontend; npm run dev"
+```
+
+### 一键关闭
+
+```powershell
+# 关闭后端（杀死 8000 端口进程）
+$pid = (Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue).OwningProcess
+if ($pid) { Stop-Process -Id $pid -Force; Write-Host "Backend stopped (PID $pid)" }
+else { Write-Host "Backend not running" }
+
+# 关闭前端（杀死 5173 端口进程）
+$pid = (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess
+if ($pid) { Stop-Process -Id $pid -Force; Write-Host "Frontend stopped (PID $pid)" }
+else { Write-Host "Frontend not running" }
+
+# 关闭数据库（保留数据）
+docker-compose down
+
+# 如需同时清除数据库数据：
+# docker-compose down -v
+```
+
+### 查看运行状态
+
+```powershell
+# 容器状态
+docker ps
+
+# 端口占用
+netstat -ano | findstr "8000 5173"
 ```
 
 ---
@@ -195,132 +259,18 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-## Phase 3: 工作流引擎使用指南
+## 各 Phase 使用指南
 
-### 前置准备：为用户设置直属经理
+详细的功能说明、API 端点、前端页面和使用示例已移至 `docs/` 目录：
 
-工作流中的 `manager` 审批人策略依赖用户的 `manager_id` 字段。测试前先给用户指定经理：
-
-```powershell
-# 创建一个经理账号后，将员工 A 的经理设为经理 B
-docker exec -it oa-postgres psql -U oa -d oa_db -c "UPDATE users SET manager_id = (SELECT id FROM users WHERE username = '经理B的用户名') WHERE username = '员工A的用户名';"
-```
-
-### 创建流程定义
-
-1. 以管理员身份登录，访问管理后台 → 流程定义
-2. 点击"新建"，输入名称和 JSON 定义
-3. 示例请假流程：
-
-```json
-{
-  "nodes": [
-    {"id": "start", "type": "start", "label": "提交申请"},
-    {"id": "manager_approve", "type": "approval", "label": "经理审批", "assignee_type": "manager"},
-    {"id": "end_approved", "type": "end", "label": "通过", "outcome": "approved"},
-    {"id": "end_rejected", "type": "end", "label": "驳回", "outcome": "rejected"}
-  ],
-  "transitions": [
-    {"from": "start", "action": "submit", "to": "manager_approve"},
-    {"from": "manager_approve", "action": "approve", "to": "end_approved"},
-    {"from": "manager_approve", "action": "reject", "to": "end_rejected"}
-  ]
-}
-```
-
-**审批人类型说明：**
-
-| 类型 | 写法 | 说明 |
-|------|------|------|
-| 发起人自己 | `"assignee_type": "initiator"` | 任务分配给发起人 |
-| 直属经理 | `"assignee_type": "manager"` | 自动查找发起人的 manager_id |
-| 按角色分配 | `"assignee_type": "role", "assignee_value": "hr_admin"` | 自动从拥有该角色的用户中选待办最少的 |
-| 指定用户 | `"assignee_type": "user", "assignee_value": "3"` | 直接指定用户 ID |
-
-### 发起和审批流程
-
-1. 用普通用户登录，访问"我发起的"页面
-2. 点击"发起流程"，选择流程定义，填写标题和表单数据
-3. 用审批人（如经理）登录，在"我的待办"中看到待审批任务
-4. 点击任务，填写备注，点击"同意"或"驳回"
-5. 驳回后实例状态变为 `rejected`，同意后根据流程定义推进到下一节点
-6. 在实例详情页可查看完整的审批历史时间线
-
-### 撤销流程
-
-发起人可在实例详情页点击"撤销"（仅限 pending 状态的实例）。撤销后所有待办任务自动取消。
-
-### 通过 Swagger 调试
-
-后端 API 文档 `http://localhost:8000/docs` 中可直接测试所有工作流接口：
-
-- `POST /api/v1/workflow-defs` — 创建流程定义（需 admin）
-- `POST /api/v1/workflow/instances` — 发起流程
-- `GET /api/v1/workflow/tasks` — 我的待办
-- `POST /api/v1/workflow/tasks/{id}/approve` — 同意
-- `POST /api/v1/workflow/tasks/{id}/reject` — 驳回
-
----
-
-## Phase 4: 公司门户首页使用指南
-
-### 首页公开访问
-
-首页 `/` 无需登录即可访问，包含以下内容：
-
-1. **顶部导航** — 公司名称 + 登录/注册（未登录时显示）
-2. **公司横幅** — 公司名称、Logo、简介（管理员可在后台配置）
-3. **快捷入口** — 请假/报销/审批/通知/通讯录/我的待办，点击需登录的功能会跳转到登录页
-4. **媒体轮播** — 已上传的图片/视频自动轮播展示
-5. **公告栏** — 最新 5 条已发布公告，支持 Markdown 渲染，置顶公告优先显示
-6. **内网导航** — 可配置的外部系统链接（如 HR 系统、OA 门户等）
-
-登录后，首页额外显示：
-7. **个人统计卡片** — 待办任务数、已处理数、发起的流程数
-
-> **提示**：运行 `uv run python -m app.core.seed` 会预填默认的公司信息、一条欢迎公告和 5 个内网导航占位链接，确保首页首次加载时各模块均可见。未配置数据的模块会显示空态提示文字，而不是整块隐藏。
-
-### 管理后台配置
-
-以管理员身份登录后，访问 `/admin` 可看到新增的管理菜单：
-
-#### 公告管理 (`/admin/announcements`)
-
-- 新建公告：Markdown 格式编辑，支持预览
-- 置顶：勾选后该公告始终排在列表最前
-- 发布：新建的公告默认为草稿状态，点击发布后才会在首页展示
-- 编辑/删除：列表中直接操作
-
-#### 媒体管理 (`/admin/media`)
-
-- 上传：支持 jpg/png/gif/webp/mp4/webm/mov 格式，最大 50MB
-- 展示：图片缩略图 + 视频占位图标网格布局
-- 删除：悬停显示删除按钮
-
-#### 公司设置 (`/admin/settings`)
-
-- **公司信息**：公司名称、Logo URL、简介、地址、联系方式
-- **快捷链接**：动态添加/删除内网导航链接（名称 + URL + 图标）
-- 每个设置区域独立保存
-
-### 媒体存储配置
-
-默认使用本地磁盘存储（`backend/uploads/` 目录）。如需切换云存储：
-
-1. 实现 `app.core.storage.base.StorageBackend` 抽象类
-2. 在 `app.core.config.py` 中修改 `STORAGE_BACKEND` 配置项
-3. 重启后端服务
-
-### 通过 Swagger 调试
-
-- `GET /api/v1/announcements` — 已发布公告列表（公开）
-- `POST /api/v1/announcements` — 创建公告（需 announcement:create）
-- `PUT /api/v1/announcements/{id}` — 更新/发布公告（需 announcement:update）
-- `DELETE /api/v1/announcements/{id}` — 删除公告（需 announcement:delete）
-- `POST /api/v1/media/upload` — 上传媒体文件（需 media:upload）
-- `GET /api/v1/media` — 媒体列表（公开）
-- `DELETE /api/v1/media/{id}` — 删除媒体（需 media:delete）
-- `GET /api/v1/settings/company-info` — 公司信息（公开）
-- `PUT /api/v1/settings/company-info` — 更新公司信息（需 announcement:update）
-- `GET /api/v1/settings/quick-links` — 快捷链接（公开）
-- `PUT /api/v1/settings/quick-links` — 更新快捷链接（需 announcement:update）
+| Phase | 文档 | 内容 |
+|-------|------|------|
+| Phase 1 | [docs/phase1.md](docs/phase1.md) | 基础骨架：认证、项目脚手架 |
+| Phase 2 | [docs/phase2.md](docs/phase2.md) | RBAC 权限 + 部门组织架构 |
+| Phase 3 | [docs/phase3.md](docs/phase3.md) | 工作流引擎：流程定义、审批流转 |
+| Phase 4 | [docs/phase4.md](docs/phase4.md) | 公司门户：公告、媒体、公司设置 |
+| Phase 5 | [docs/phase5-plan.md](docs/phase5-plan.md) | 请假模块：端到端流程 + WebSocket |
+| Phase 6 | [docs/phase6-plan.md](docs/phase6-plan.md) | 员工管理：档案、入职、离职交接 |
+| Phase 7 | [docs/phase7-plan.md](docs/phase7-plan.md) | 办公用品：固定资产 + 耗材管理 |
+| Phase 8 | [docs/phase8-plan.md](docs/phase8-plan.md) | 管理员层级体系：角色分层 + 部门数据隔离 |
+| Phase 9 | [docs/phase9-plan.md](docs/phase9-plan.md) | 考勤管理：打卡、月度汇总、请假联动、团队视图 |

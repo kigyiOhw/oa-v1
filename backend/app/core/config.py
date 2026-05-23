@@ -18,5 +18,12 @@ class Settings(BaseSettings):
     STORAGE_BACKEND: str = "local"
     UPLOAD_DIR: str = "./uploads"
 
+    # S3-compatible cloud storage (set STORAGE_BACKEND="s3" to use)
+    STORAGE_S3_ENDPOINT: str = ""
+    STORAGE_S3_BUCKET: str = ""
+    STORAGE_S3_ACCESS_KEY: str = ""
+    STORAGE_S3_SECRET_KEY: str = ""
+    STORAGE_S3_REGION: str = "us-east-1"
+
 
 settings = Settings()

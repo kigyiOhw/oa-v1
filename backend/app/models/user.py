@@ -39,6 +39,8 @@ class Role(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(200))
+    role_type: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
+    admin_scope: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     users: Mapped[list["User"]] = relationship("User", secondary=user_roles, back_populates="roles")
@@ -74,6 +76,9 @@ class User(Base):
     )
     manager: Mapped["User | None"] = relationship(
         "User", remote_side="User.id", backref="subordinates"
+    )
+    employee_profile: Mapped["EmployeeProfile | None"] = relationship(
+        "EmployeeProfile", back_populates="user", uselist=False
     )
 
     @property

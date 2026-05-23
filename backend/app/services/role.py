@@ -25,14 +25,14 @@ class RoleService:
             raise OAException("Role not found", status_code=404)
         return role
 
-    async def create(self, name: str, description: str | None) -> Role:
+    async def create(self, name: str, description: str | None, role_type: str = "user", admin_scope: str | None = None) -> Role:
         existing = await self.repo.get_by_name(name)
         if existing:
             raise OAException("Role name already exists", status_code=400)
-        role = Role(name=name, description=description)
+        role = Role(name=name, description=description, role_type=role_type, admin_scope=admin_scope)
         return await self.repo.create(role)
 
-    async def update(self, role_id: int, name: str | None, description: str | None) -> Role:
+    async def update(self, role_id: int, name: str | None, description: str | None, role_type: str | None = None, admin_scope: str | None = None) -> Role:
         role = await self.get_by_id(role_id)
         if name is not None:
             existing = await self.repo.get_by_name(name)
@@ -41,6 +41,10 @@ class RoleService:
             role.name = name
         if description is not None:
             role.description = description
+        if role_type is not None:
+            role.role_type = role_type
+        if admin_scope is not None:
+            role.admin_scope = admin_scope
         return await self.repo.update(role)
 
     async def delete(self, role_id: int) -> None:

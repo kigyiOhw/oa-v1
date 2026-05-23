@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { workflowApi, TaskItem, HistoryItem } from '../../api/workflow'
 
 export default function TaskDetail() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [task, setTask] = useState<TaskItem | null>(null)
@@ -27,7 +29,8 @@ export default function TaskDetail() {
   }, [id])
 
   const handleAction = async (action: 'approve' | 'reject') => {
-    if (!confirm(`Confirm ${action}?`)) return
+    const confirmMsg = action === 'approve' ? t('workflow.confirmApprove') : t('workflow.confirmReject')
+    if (!confirm(confirmMsg)) return
     setProcessing(true)
     try {
       if (action === 'approve') {
@@ -51,36 +54,39 @@ export default function TaskDetail() {
     return node?.label || nodeId
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
   if (!task) return null
 
   const instance = task.instance
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <button
-        className="text-blue-600 hover:underline text-sm mb-4 inline-block"
-        onClick={() => navigate('/workflow/tasks')}
-      >
-        &larr; Back to My Tasks
-      </button>
+      <div className="flex gap-4 mb-4">
+        <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
+        <button
+          className="text-blue-600 hover:underline text-sm"
+          onClick={() => navigate('/workflow/tasks')}
+        >
+          &larr; {t('workflow.backToMyTasks')}
+        </button>
+      </div>
 
       <div className="bg-white rounded-lg border p-6 mb-6">
         <h1 className="text-xl font-bold mb-2">{instance?.title || `Instance #${task.instance_id}`}</h1>
         <p className="text-sm text-gray-500">
-          Step: <span className="font-medium">{nodeLabel(task.node_id)}</span>
+          {t('workflow.step')}: <span className="font-medium">{nodeLabel(task.node_id)}</span>
           {' '}&middot;{' '}
-          Workflow: {instance?.workflow_def?.name || 'Unknown'}
+          {t('workflow.workflow')}: {instance?.workflow_def?.name || 'Unknown'}
         </p>
       </div>
 
       {task.status === 'pending' && (
         <div className="bg-white rounded-lg border p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Process</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('workflow.process')}</h2>
           <textarea
             className="block w-full border rounded px-3 py-2 text-sm mb-3"
             rows={3}
-            placeholder="Add a comment (optional)..."
+            placeholder={t('workflow.comment')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
@@ -90,14 +96,14 @@ export default function TaskDetail() {
               disabled={processing}
               onClick={() => handleAction('approve')}
             >
-              {processing ? 'Processing...' : 'Approve'}
+              {processing ? t('common.processing') : t('workflow.approve')}
             </button>
             <button
               className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
               disabled={processing}
               onClick={() => handleAction('reject')}
             >
-              {processing ? 'Processing...' : 'Reject'}
+              {processing ? t('common.processing') : t('workflow.reject')}
             </button>
           </div>
         </div>
@@ -105,7 +111,7 @@ export default function TaskDetail() {
 
       {instance?.history && instance.history.length > 0 && (
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-3">History</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('workflow.history')}</h2>
           <div className="space-y-3">
             {[...instance.history].reverse().map((h: HistoryItem) => (
               <div key={h.id} className="flex gap-3 text-sm">
@@ -117,7 +123,7 @@ export default function TaskDetail() {
                   h.action === 'reject' ? 'text-red-500' :
                   'text-blue-500'
                 }`}>
-                  {h.action === 'approve' ? 'Approved' : h.action === 'reject' ? 'Rejected' : h.action}
+                  {h.action === 'approve' ? t('workflow.approve') : h.action === 'reject' ? t('workflow.reject') : h.action}
                 </div>
                 <div className="text-gray-600">by User #{h.operator_id}</div>
                 {h.comment && <div className="text-gray-400 italic">— "{h.comment}"</div>}

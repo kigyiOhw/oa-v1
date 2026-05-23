@@ -8,6 +8,8 @@ class RoleOut(BaseModel):
 
     id: int
     name: str
+    role_type: str = "user"
+    admin_scope: str | None = None
 
 
 class UserBase(BaseModel):

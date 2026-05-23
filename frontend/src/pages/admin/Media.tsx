@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { mediaApi, MediaFile } from '../../api/media'
 
 export default function Media() {
+  const { t } = useTranslation()
   const [files, setFiles] = useState<MediaFile[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -24,7 +26,7 @@ export default function Media() {
       await mediaApi.upload(file)
       fetchFiles(page)
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Upload failed')
+      alert(err.response?.data?.detail || t('media.uploadFailed'))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -32,7 +34,7 @@ export default function Media() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this file?')) return
+    if (!confirm(t('media.deleteConfirm'))) return
     try {
       await mediaApi.delete(id)
       fetchFiles(page)
@@ -44,7 +46,7 @@ export default function Media() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Media Files</h1>
+        <h1 className="text-2xl font-bold">{t('media.title')}</h1>
         <div>
           <input
             ref={fileInputRef}
@@ -58,7 +60,7 @@ export default function Media() {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            {uploading ? 'Uploading...' : 'Upload File'}
+            {uploading ? t('common.uploading') : t('media.uploadFile')}
           </button>
         </div>
       </div>
@@ -84,13 +86,13 @@ export default function Media() {
                 className="text-red-500 hover:underline text-xs ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => handleDelete(f.id)}
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>
         ))}
         {files.length === 0 && (
-          <p className="text-gray-400 text-sm col-span-full text-center py-8">No media files yet</p>
+          <p className="text-gray-400 text-sm col-span-full text-center py-8">{t('media.noFiles')}</p>
         )}
       </div>
 

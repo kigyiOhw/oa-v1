@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { deptApi, DepartmentTreeItem, DepartmentItem } from '../../api/departments'
 
 export default function Departments() {
+  const { t } = useTranslation()
   const [tree, setTree] = useState<DepartmentTreeItem[]>([])
   const [flattened, setFlattened] = useState<DepartmentItem[]>([])
   const [showCreate, setShowCreate] = useState(false)
@@ -18,7 +20,7 @@ export default function Departments() {
   }, [])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this department? Child departments will not be deleted.')) return
+    if (!confirm(t('departments.deleteConfirm'))) return
     await deptApi.delete(id)
     fetchData()
   }
@@ -26,17 +28,17 @@ export default function Departments() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Departments</h1>
+        <h1 className="text-2xl font-bold">{t('departments.title')}</h1>
         <button
           className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
           onClick={() => setShowCreate(true)}
         >
-          Add Department
+          {t('departments.addDepartment')}
         </button>
       </div>
 
       <div className="border rounded p-4">
-        {tree.length === 0 && <p className="text-gray-400 text-sm">No departments yet.</p>}
+        {tree.length === 0 && <p className="text-gray-400 text-sm">{t('departments.noDepartments')}</p>}
         {tree.map((dept) => (
           <DeptNode
             key={dept.id}
@@ -134,6 +136,7 @@ function DeptFormModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(editing?.name || '')
   const [description, setDescription] = useState(editing?.description || '')
   const [parentId, setParentId] = useState<number | null>(
@@ -143,7 +146,6 @@ function DeptFormModal({
   const [saving, setSaving] = useState(false)
 
   const isEdit = !!editing
-  // Filter out self and descendants from parent options
   const validParents = flattened.filter(
     (d) => d.id !== editing?.id
   )
@@ -165,12 +167,14 @@ function DeptFormModal({
     onSaved()
   }
 
+  const title = isEdit ? t('departments.editDepartment') : t('departments.addDepartment')
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96">
-        <h2 className="text-lg font-bold mb-4">{isEdit ? 'Edit' : 'Add'} Department</h2>
+        <h2 className="text-lg font-bold mb-4">{title}</h2>
         <label className="block mb-2 text-sm">
-          Name
+          {t('departments.name')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={name}
@@ -178,13 +182,13 @@ function DeptFormModal({
           />
         </label>
         <label className="block mb-2 text-sm">
-          Parent Department
+          {t('departments.parentDepartment')}
           <select
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={parentId ?? ''}
             onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}
           >
-            <option value="">None (root)</option>
+            <option value="">{t('departments.noneRoot')}</option>
             {validParents.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -193,7 +197,7 @@ function DeptFormModal({
           </select>
         </label>
         <label className="block mb-2 text-sm">
-          Description
+          {t('departments.description')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={description}
@@ -201,7 +205,7 @@ function DeptFormModal({
           />
         </label>
         <label className="block mb-4 text-sm">
-          Sort Order
+          {t('departments.sortOrder')}
           <input
             type="number"
             className="block w-full border rounded px-2 py-1 mt-0.5"
@@ -215,10 +219,10 @@ function DeptFormModal({
             onClick={handleSave}
             disabled={saving || !name.trim()}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
           <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

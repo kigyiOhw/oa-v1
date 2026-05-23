@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { settingsApi, CompanyInfo, QuickLink } from '../../api/settings'
 
 export default function CompanySettings() {
+  const { t } = useTranslation()
   const [info, setInfo] = useState<CompanyInfo>({ name: '', logo_url: '', description: '', address: '', contact: '' })
   const [links, setLinks] = useState<QuickLink[]>([])
   const [savingInfo, setSavingInfo] = useState(false)
@@ -19,9 +21,9 @@ export default function CompanySettings() {
     setInfoMsg('')
     try {
       await settingsApi.updateCompanyInfo(info)
-      setInfoMsg('Saved')
+      setInfoMsg(t('common.saveSuccess'))
     } catch (e: any) {
-      setInfoMsg(e.response?.data?.detail || 'Save failed')
+      setInfoMsg(e.response?.data?.detail || t('common.saveFailed'))
     } finally {
       setSavingInfo(false)
     }
@@ -45,9 +47,9 @@ export default function CompanySettings() {
     try {
       const res = await settingsApi.updateQuickLinks(links)
       setLinks(res.data)
-      setLinksMsg('Saved')
+      setLinksMsg(t('common.saveSuccess'))
     } catch (e: any) {
-      setLinksMsg(e.response?.data?.detail || 'Save failed')
+      setLinksMsg(e.response?.data?.detail || t('common.saveFailed'))
     } finally {
       setSavingLinks(false)
     }
@@ -55,14 +57,13 @@ export default function CompanySettings() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Company Settings</h1>
+      <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
 
-      {/* Company Info */}
       <section className="bg-white rounded-lg shadow-sm p-6 border">
-        <h2 className="text-lg font-semibold mb-4">Company Information</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('settings.companyInfo')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block text-sm">
-            Company Name
+            {t('settings.companyName')}
             <input
               className="block w-full border rounded px-2 py-1 mt-0.5"
               value={info.name}
@@ -70,7 +71,7 @@ export default function CompanySettings() {
             />
           </label>
           <label className="block text-sm">
-            Logo URL
+            {t('settings.logoUrl')}
             <input
               className="block w-full border rounded px-2 py-1 mt-0.5"
               value={info.logo_url}
@@ -78,7 +79,7 @@ export default function CompanySettings() {
             />
           </label>
           <label className="block text-sm md:col-span-2">
-            Description
+            {t('settings.description')}
             <textarea
               className="block w-full border rounded px-2 py-1 mt-0.5"
               rows={3}
@@ -87,7 +88,7 @@ export default function CompanySettings() {
             />
           </label>
           <label className="block text-sm">
-            Address
+            {t('settings.address')}
             <input
               className="block w-full border rounded px-2 py-1 mt-0.5"
               value={info.address}
@@ -95,7 +96,7 @@ export default function CompanySettings() {
             />
           </label>
           <label className="block text-sm">
-            Contact
+            {t('settings.contact')}
             <input
               className="block w-full border rounded px-2 py-1 mt-0.5"
               value={info.contact}
@@ -109,26 +110,25 @@ export default function CompanySettings() {
             onClick={saveInfo}
             disabled={savingInfo}
           >
-            {savingInfo ? 'Saving...' : 'Save Company Info'}
+            {savingInfo ? t('common.saving') : t('settings.saveCompanyInfo')}
           </button>
-          {infoMsg && <span className={`text-sm ${infoMsg === 'Saved' ? 'text-green-600' : 'text-red-600'}`}>{infoMsg}</span>}
+          {infoMsg && <span className={`text-sm ${infoMsg === t('common.saveSuccess') ? 'text-green-600' : 'text-red-600'}`}>{infoMsg}</span>}
         </div>
       </section>
 
-      {/* Quick Links */}
       <section className="bg-white rounded-lg shadow-sm p-6 border">
-        <h2 className="text-lg font-semibold mb-4">Quick Links</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('settings.quickLinks')}</h2>
         {links.map((link, idx) => (
           <div key={idx} className="flex gap-2 mb-2 items-center">
             <input
               className="flex-1 border rounded px-2 py-1 text-sm"
-              placeholder="Name"
+              placeholder={t('settings.namePlaceholder')}
               value={link.name}
               onChange={(e) => updateLink(idx, 'name', e.target.value)}
             />
             <input
               className="flex-1 border rounded px-2 py-1 text-sm"
-              placeholder="URL (https://...)"
+              placeholder={t('settings.urlPlaceholder')}
               value={link.url}
               onChange={(e) => updateLink(idx, 'url', e.target.value)}
             />
@@ -145,20 +145,20 @@ export default function CompanySettings() {
               className="text-red-500 text-xs hover:underline"
               onClick={() => removeLink(idx)}
             >
-              Remove
+              {t('common.remove')}
             </button>
           </div>
         ))}
         <div className="mt-3 flex gap-3">
-          <button className="text-blue-600 text-sm hover:underline" onClick={addLink}>+ Add Link</button>
+          <button className="text-blue-600 text-sm hover:underline" onClick={addLink}>{t('settings.addLink')}</button>
           <button
             className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm disabled:opacity-50"
             onClick={saveLinks}
             disabled={savingLinks}
           >
-            {savingLinks ? 'Saving...' : 'Save Links'}
+            {savingLinks ? t('common.saving') : t('settings.saveLinks')}
           </button>
-          {linksMsg && <span className={`text-sm ${linksMsg === 'Saved' ? 'text-green-600' : 'text-red-600'}`}>{linksMsg}</span>}
+          {linksMsg && <span className={`text-sm ${linksMsg === t('common.saveSuccess') ? 'text-green-600' : 'text-red-600'}`}>{linksMsg}</span>}
         </div>
       </section>
     </div>

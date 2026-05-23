@@ -1,4 +1,41 @@
+from dataclasses import dataclass
 from enum import StrEnum
+
+from app.models.user import User
+
+
+@dataclass
+class AdminScope:
+    scope: str  # "global" | "department" | "self"
+    dept_id: int | None = None
+
+
+def get_admin_scope(user: User) -> AdminScope:
+    """Determine the user's data visibility scope from their roles."""
+    if user.is_superuser:
+        return AdminScope(scope="global")
+
+    best_scope = AdminScope(scope="self")
+    for role in user.roles:
+        rt = role.role_type
+        if rt == "super_admin":
+            return AdminScope(scope="global")
+        if rt == "module_admin":
+            if role.admin_scope == "global":
+                return AdminScope(scope="global")
+            if role.admin_scope == "department" and user.department_id:
+                best_scope = AdminScope(scope="department", dept_id=user.department_id)
+        if rt == "dept_admin":
+            if user.department_id:
+                best_scope = AdminScope(scope="department", dept_id=user.department_id)
+    return best_scope
+
+
+def is_super_admin(user: User) -> bool:
+    """Check if user has super admin privileges via is_superuser or role_type."""
+    if user.is_superuser:
+        return True
+    return any(r.role_type == "super_admin" for r in user.roles)
 
 
 class Permissions(StrEnum):
@@ -27,6 +64,21 @@ class Permissions(StrEnum):
     MEDIA_UPLOAD = "media:upload"
     MEDIA_READ = "media:read"
     MEDIA_DELETE = "media:delete"
+    LEAVE_CREATE = "leave:create"
+    LEAVE_READ = "leave:read"
+    LEAVE_DELETE = "leave:delete"
+    EMPLOYEE_CREATE = "employee:create"
+    EMPLOYEE_READ = "employee:read"
+    EMPLOYEE_UPDATE = "employee:update"
+    EMPLOYEE_DELETE = "employee:delete"
+    ASSET_CREATE = "asset:create"
+    ASSET_READ = "asset:read"
+    ASSET_UPDATE = "asset:update"
+    ASSET_DELETE = "asset:delete"
+    CONSUMABLE_CREATE = "consumable:create"
+    CONSUMABLE_READ = "consumable:read"
+    CONSUMABLE_UPDATE = "consumable:update"
+    CONSUMABLE_DELETE = "consumable:delete"
 
 
 ALL_PERMISSIONS: list[str] = [p.value for p in Permissions]

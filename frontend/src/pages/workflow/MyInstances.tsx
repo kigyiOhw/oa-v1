@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { workflowApi, InstanceItem } from '../../api/workflow'
 
 export default function MyInstances() {
+  const { t } = useTranslation()
   const [instances, setInstances] = useState<InstanceItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -20,10 +22,10 @@ export default function MyInstances() {
 
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      cancelled: 'Cancelled',
+      pending: t('workflow.statusLabels.pending'),
+      approved: t('workflow.statusLabels.approved'),
+      rejected: t('workflow.statusLabels.rejected'),
+      cancelled: t('workflow.statusLabels.cancelled'),
     }
     return map[s] || s
   }
@@ -42,14 +44,15 @@ export default function MyInstances() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">My Instances</h1>
+      <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
+      <h1 className="text-2xl font-bold mb-6">{t('workflow.myInstances')}</h1>
       <table className="w-full text-sm border">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-3 py-2 text-left">Title</th>
-            <th className="px-3 py-2 text-left">Workflow</th>
-            <th className="px-3 py-2 text-left">Status</th>
-            <th className="px-3 py-2 text-left">Created</th>
+            <th className="px-3 py-2 text-left">{t('workflow.title')}</th>
+            <th className="px-3 py-2 text-left">{t('workflow.workflow')}</th>
+            <th className="px-3 py-2 text-left">{t('workflow.status')}</th>
+            <th className="px-3 py-2 text-left">{t('workflow.created')}</th>
           </tr>
         </thead>
         <tbody>
@@ -70,7 +73,7 @@ export default function MyInstances() {
           {instances.length === 0 && (
             <tr>
               <td colSpan={4} className="px-3 py-8 text-center text-gray-400">
-                No instances yet
+                {t('workflow.noInstances')}
               </td>
             </tr>
           )}
@@ -83,7 +86,7 @@ export default function MyInstances() {
             disabled={page <= 1}
             onClick={() => setPage(page - 1)}
           >
-            Prev
+            {t('common.prev')}
           </button>
           <span className="px-3 py-1 text-sm text-gray-600">
             {page} / {totalPages}
@@ -93,7 +96,7 @@ export default function MyInstances() {
             disabled={page >= totalPages}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            {t('common.next')}
           </button>
         </div>
       )}

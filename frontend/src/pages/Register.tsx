@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 
 export default function Register() {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,16 +30,16 @@ export default function Register() {
       login(user, access_token, refresh_token)
       navigate('/')
     } catch (err: any) {
-      setError(err.response?.data?.detail || '注册失败')
+      setError(err.response?.data?.detail || t('auth.registerFailed'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
+    <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">注册账号</h1>
+        <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">{t('auth.registerTitle')}</h1>
         {error && (
           <div className="mb-4 rounded bg-red-50 px-4 py-2 text-sm text-red-600">
             {error}
@@ -45,7 +47,7 @@ export default function Register() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">用户名</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.username')}</label>
             <input
               type="text"
               value={username}
@@ -56,7 +58,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">邮箱</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.email')}</label>
             <input
               type="email"
               value={email}
@@ -66,7 +68,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">姓名</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.fullName')}</label>
             <input
               type="text"
               value={fullName}
@@ -75,7 +77,7 @@ export default function Register() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">密码</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.password')}</label>
             <input
               type="password"
               value={password}
@@ -90,14 +92,17 @@ export default function Register() {
             disabled={loading}
             className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? '注册中...' : '注册'}
+            {loading ? t('auth.registering') : t('auth.register')}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
-          已有账号？{' '}
+          {t('auth.hasAccount')}{' '}
           <Link to="/login" className="text-blue-600 hover:underline">
-            去登录
+            {t('auth.goLogin')}
           </Link>
+        </p>
+        <p className="mt-3 text-center">
+          <Link to="/" className="text-sm text-gray-400 hover:text-gray-600">{t('common.backToHome')}</Link>
         </p>
       </div>
     </div>

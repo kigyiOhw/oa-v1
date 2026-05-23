@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { workflowDefApi, DefinitionItem } from '../../api/workflow'
 
 export default function WorkflowDefs() {
+  const { t } = useTranslation()
   const [defs, setDefs] = useState<DefinitionItem[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<DefinitionItem | null>(null)
@@ -16,7 +18,7 @@ export default function WorkflowDefs() {
   }, [])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this workflow definition?')) return
+    if (!confirm(t('workflowDefs.deleteConfirm'))) return
     try {
       await workflowDefApi.delete(id)
       fetchDefs()
@@ -28,23 +30,23 @@ export default function WorkflowDefs() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Workflow Definitions</h1>
+        <h1 className="text-2xl font-bold">{t('workflowDefs.title')}</h1>
         <button
           className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
           onClick={() => setShowCreate(true)}
         >
-          Create Definition
+          {t('workflowDefs.createDefinition')}
         </button>
       </div>
       <table className="w-full text-sm border">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">Name</th>
-            <th className="px-3 py-2 text-left">Description</th>
-            <th className="px-3 py-2 text-left">Version</th>
-            <th className="px-3 py-2 text-left">Active</th>
-            <th className="px-3 py-2 text-left">Actions</th>
+            <th className="px-3 py-2 text-left">{t('workflowDefs.name')}</th>
+            <th className="px-3 py-2 text-left">{t('workflowDefs.description')}</th>
+            <th className="px-3 py-2 text-left">{t('workflowDefs.version')}</th>
+            <th className="px-3 py-2 text-left">{t('workflowDefs.active')}</th>
+            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +58,7 @@ export default function WorkflowDefs() {
               <td className="px-3 py-2">v{d.version}</td>
               <td className="px-3 py-2">
                 <span className={d.is_active ? 'text-green-600' : 'text-gray-400'}>
-                  {d.is_active ? 'Yes' : 'No'}
+                  {d.is_active ? t('common.yes') : t('common.no')}
                 </span>
               </td>
               <td className="px-3 py-2 space-x-2">
@@ -64,13 +66,13 @@ export default function WorkflowDefs() {
                   className="text-blue-600 hover:underline text-xs"
                   onClick={() => setEditing(d)}
                 >
-                  Edit
+                  {t('common.edit')}
                 </button>
                 <button
                   className="text-red-500 hover:underline text-xs"
                   onClick={() => handleDelete(d.id)}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               </td>
             </tr>
@@ -104,6 +106,7 @@ function DefFormModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(def?.name || '')
   const [description, setDescription] = useState(def?.description || '')
   const [icon, setIcon] = useState(def?.icon || '')
@@ -120,7 +123,7 @@ function DefFormModal({
     try {
       definition = JSON.parse(definitionStr)
     } catch {
-      setError('Invalid JSON')
+      setError(t('workflowDefs.invalidJson'))
       return
     }
     setSaving(true)
@@ -149,13 +152,15 @@ function DefFormModal({
     }
   }
 
+  const title = def ? t('workflowDefs.editDefinition') : t('workflowDefs.createDefinition')
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-[600px] max-h-[85vh] overflow-auto">
-        <h2 className="text-lg font-bold mb-4">{def ? 'Edit Definition' : 'Create Definition'}</h2>
+        <h2 className="text-lg font-bold mb-4">{title}</h2>
         {error && <div className="mb-3 text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
         <label className="block mb-2 text-sm">
-          Name
+          {t('workflowDefs.name')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={name}
@@ -163,7 +168,7 @@ function DefFormModal({
           />
         </label>
         <label className="block mb-2 text-sm">
-          Description
+          {t('workflowDefs.description')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={description}
@@ -171,7 +176,7 @@ function DefFormModal({
           />
         </label>
         <label className="block mb-2 text-sm">
-          Icon
+          {t('workflowDefs.icon')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={icon}
@@ -185,11 +190,11 @@ function DefFormModal({
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
             />
-            Active
+            {t('workflowDefs.active')}
           </label>
         )}
         <label className="block mb-4 text-sm">
-          Definition (JSON)
+          {t('workflowDefs.definition')}
           <textarea
             className="block w-full border rounded px-2 py-1 mt-0.5 font-mono text-xs"
             rows={14}
@@ -203,10 +208,10 @@ function DefFormModal({
             onClick={handleSave}
             disabled={saving || !name.trim()}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
           <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

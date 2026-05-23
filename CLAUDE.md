@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Enterprise OA (Office Automation) system centered around configurable approval workflows. Currently in **Phase 1** (basic skeleton): auth is implemented, workflow engine is planned but not yet built.
+Enterprise OA (Office Automation) system centered around configurable approval workflows. Currently in **Phase 9** (attendance): auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, and attendance with check-in/out + team view are all implemented.
 
 ## Common Commands
 
@@ -16,6 +16,7 @@ docker-compose up -d          # Start PostgreSQL 16 + Redis 7
 cd backend
 uv pip install -e ".[dev]"    # Install dependencies (first time)
 uv run uvicorn app.main:app --reload --port 8000   # Dev server
+uv run python -m app.core.seed # Seed initial data (first time)
 uv run alembic upgrade head   # Run migrations
 uv run alembic revision --autogenerate -m "desc"   # Generate migration
 uv run alembic downgrade -1   # Rollback one migration
@@ -58,17 +59,23 @@ New dependencies should follow this pattern.
 ### Auth
 JWT access/refresh token pair. Access token expires in 30 min, refresh in 7 days. The Axios interceptor in `frontend/src/api/client.ts` auto-refreshes on 401. Passwords hashed with bcrypt via passlib.
 
+### RBAC & Admin Hierarchy (Phase 8)
+Roles have a `role_type` field: `super_admin` (full access), `module_admin` (module-scoped, with `admin_scope` global/department), `dept_admin` (department-scoped), `user` (self-service). `is_super_admin(user)` in `core/permissions.py` checks both `is_superuser` flag and `role_type`. `get_admin_scope(user)` returns `AdminScope(scope, dept_id)` for department-level data isolation. Employee and Asset list APIs auto-filter by department for dept_admin users. Frontend `getAdminLevel(user)` in `stores/auth.ts` mirrors this for menu visibility.
+
 ### Configuration
 `backend/app/core/config.py` uses `pydantic-settings` with `.env` file support, case-sensitive. Defaults point to the docker-compose services (`oa:oa_secret@localhost:5432/oa_db`).
 
 ### Frontend
-- **State**: Zustand store (`stores/auth.ts`) for auth state + token persistence in localStorage.
-- **Routing**: React Router v6, currently Dashboard `/`, Login `/login`, Register `/register`.
+- **State**: Zustand stores — `auth.ts` (auth state + token persistence), `notification.ts` (in-memory notifications), `theme.ts` (background theme: color/gradient/image, persisted to localStorage).
+- **Routing**: React Router v6 — Dashboard `/`, Login `/login`, Register `/register`, Profile `/profile`, MyAssets `/my-assets`, Workflow (`/workflow/my`, `/workflow/tasks`, `/workflow/tasks/:id`, `/workflow/instances/:id`), Leaves (`/leaves`, `/leaves/new`, `/leaves/:id`, `/leaves/:id/edit`), Attendance (`/attendance`, `/attendance/team`, `/attendance/team/:userId`), Admin (`/admin/*` including `/admin/users`, `/admin/roles` (with wizard for role type/scope), `/admin/departments`, `/admin/workflow-defs`, `/admin/announcements`, `/admin/media`, `/admin/employees`, `/admin/employees/:id`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/:id`, `/admin/assets/:id/edit`, `/admin/asset-categories`, `/admin/consumables`, `/admin/consumables/new`, `/admin/consumables/:id`, `/admin/consumables/:id/edit`, `/admin/settings`, `/admin/attendance-config`).
+- **Components**: `ThemeSwitcher` (floating FAB for background customization), `LanguageSwitcher` (EN/中 toggle), `ErrorBoundary`, `ProtectedRoute`, `PermissionGuard`, `AdminLayout`.
 - **API**: Axios instance with interceptors for token injection and 401 refresh handling.
 - **Proxy**: Vite dev server proxies `/api` → `localhost:8000` and `/ws` → `ws://localhost:8000`.
 
 ### Database
-Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-to-many). All models use `Base = declarative_base()` from `db/base.py`. New models must be imported in `alembic/env.py` for autogenerate to detect them.
+All models use `Base = declarative_base()` from `db/base.py`. New models must be imported in `alembic/env.py` for autogenerate to detect them.
+
+Tables: `users`, `roles` (incl. `role_type`, `admin_scope` from Phase 8), `permissions`, `role_permissions`, `user_roles`, `departments`, `workflow_defs`, `workflow_instances`, `workflow_tasks`, `workflow_history`, `announcements`, `media_files`, `settings`, `leave_requests`, `employee_profiles`, `asset_categories`, `assets`, `asset_assignments`, `consumables`, `consumable_records`, `attendance_records` (Phase 9).
 
 ## Key Dependencies
 | Package | Purpose |
@@ -77,7 +84,7 @@ Current migration (0001_initial) creates: `users`, `roles`, `user_roles` (many-t
 | `python-jose` | JWT creation/validation |
 | `passlib[bcrypt]` | Password hashing |
 | `alembic` | Database migrations |
-| `redis` + `websockets` | Planned for real-time notifications (not yet wired) |
+| `redis` + `websockets` | Real-time notifications via WebSocket (wired in Phase 5) |
 | `ruff` / `mypy` | Linting (E, F, I, N, W, UP, B, C4, SIM rules) / strict type checking |
 
 

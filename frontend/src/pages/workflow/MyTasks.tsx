@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { workflowApi, TaskItem } from '../../api/workflow'
 
 export default function MyTasks() {
+  const { t } = useTranslation()
   const [tasks, setTasks] = useState<TaskItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -30,14 +32,15 @@ export default function MyTasks() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
+      <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
+      <h1 className="text-2xl font-bold mb-6">{t('workflow.myTasks')}</h1>
       <table className="w-full text-sm border">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-3 py-2 text-left">Instance</th>
-            <th className="px-3 py-2 text-left">Workflow</th>
-            <th className="px-3 py-2 text-left">Step</th>
-            <th className="px-3 py-2 text-left">Created</th>
+            <th className="px-3 py-2 text-left">{t('workflow.workflow')}</th>
+            <th className="px-3 py-2 text-left">{t('workflow.step')}</th>
+            <th className="px-3 py-2 text-left">{t('workflow.created')}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +59,7 @@ export default function MyTasks() {
           {tasks.length === 0 && (
             <tr>
               <td colSpan={4} className="px-3 py-8 text-center text-gray-400">
-                No pending tasks
+                {t('workflow.noTasks')}
               </td>
             </tr>
           )}
@@ -69,7 +72,7 @@ export default function MyTasks() {
             disabled={page <= 1}
             onClick={() => setPage(page - 1)}
           >
-            Prev
+            {t('common.prev')}
           </button>
           <span className="px-3 py-1 text-sm text-gray-600">{page} / {totalPages}</span>
           <button
@@ -77,7 +80,7 @@ export default function MyTasks() {
             disabled={page >= totalPages}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            {t('common.next')}
           </button>
         </div>
       )}

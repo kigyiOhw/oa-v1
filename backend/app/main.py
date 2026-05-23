@@ -12,13 +12,18 @@ from slowapi.errors import RateLimitExceeded
 from starlette.responses import Response
 
 from app.api.v1.announcements import router as announcements_router
+from app.api.v1.assets import cat_router as asset_categories_router, asset_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.consumables import router as consumables_router
 from app.api.v1.departments import router as departments_router
+from app.api.v1.employees import router as employees_router
+from app.api.v1.leave import router as leave_router
 from app.api.v1.media import router as media_router
 from app.api.v1.permissions import router as permissions_router
 from app.api.v1.roles import router as roles_router
 from app.api.v1.settings import router as settings_router
 from app.api.v1.users import router as users_router
+from app.api.v1.websocket import router as ws_router
 from app.api.v1.workflow import router as workflow_router
 from app.api.v1.workflow_defs import router as workflow_defs_router
 from app.core.config import settings
@@ -70,22 +75,16 @@ async def log_requests(
     start = time.time()
     client_host = request.client.host if request.client else "unknown"
     logger.info(
-        "Request start | %s %s | client=%s",
-        request.method,
-        request.url.path,
-        client_host,
+        "----------log_requests, request_start, method=%s, path=%s, client=%s",
+        request.method, request.url.path, client_host,
     )
 
     response = await call_next(request)
 
     duration = (time.time() - start) * 1000
     logger.info(
-        "Request end | %s %s | status=%s | duration=%.2fms | client=%s",
-        request.method,
-        request.url.path,
-        response.status_code,
-        duration,
-        client_host,
+        "----------log_requests, request_end, method=%s, path=%s, status=%s, duration=%.2fms, client=%s",
+        request.method, request.url.path, response.status_code, duration, client_host,
     )
     return response
 
@@ -95,14 +94,20 @@ app.mount("/media", StaticFiles(directory=settings.UPLOAD_DIR), name="media")
 
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(departments_router, prefix="/api/v1")
+app.include_router(employees_router, prefix="/api/v1")
 app.include_router(permissions_router, prefix="/api/v1")
 app.include_router(roles_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(workflow_defs_router, prefix="/api/v1")
 app.include_router(workflow_router, prefix="/api/v1")
 app.include_router(announcements_router, prefix="/api/v1")
+app.include_router(asset_categories_router, prefix="/api/v1")
+app.include_router(asset_router, prefix="/api/v1")
+app.include_router(consumables_router, prefix="/api/v1")
+app.include_router(leave_router, prefix="/api/v1")
 app.include_router(media_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
+app.include_router(ws_router)
 
 
 @app.get("/health")

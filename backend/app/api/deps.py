@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
+from app.core.permissions import is_super_admin
 from app.db.base import AsyncSessionLocal
 from app.models.user import Permission, User, role_permissions, user_roles
 from app.repositories.user import UserRepository
@@ -75,7 +76,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 def require_permission(permission: str):
     async def _check(current_user: CurrentUser, db: DBDep) -> None:
-        if current_user.is_superuser:
+        if is_super_admin(current_user):
             return
         stmt = (
             select(Permission.code)
@@ -91,7 +92,7 @@ def require_permission(permission: str):
 
 
 async def require_superuser(current_user: CurrentUser) -> None:
-    if not current_user.is_superuser:
+    if not is_super_admin(current_user):
         raise OAException("Insufficient permissions", status_code=403)
 
 

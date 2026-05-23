@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { userApi, UserItem } from '../../api/users'
 
 export default function Users() {
+  const { t } = useTranslation()
   const [users, setUsers] = useState<UserItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -19,18 +21,18 @@ export default function Users() {
   }, [page, search])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this user?')) return
+    if (!confirm(t('users.deleteConfirm'))) return
     await userApi.delete(id)
     fetchUsers()
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Users</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('users.title')}</h1>
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Search by username or email..."
+          placeholder={t('users.searchPlaceholder')}
           className="border rounded px-3 py-1.5 text-sm w-64"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -40,11 +42,11 @@ export default function Users() {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">Username</th>
-            <th className="px-3 py-2 text-left">Email</th>
-            <th className="px-3 py-2 text-left">Roles</th>
-            <th className="px-3 py-2 text-left">Status</th>
-            <th className="px-3 py-2 text-left">Actions</th>
+            <th className="px-3 py-2 text-left">{t('users.username')}</th>
+            <th className="px-3 py-2 text-left">{t('users.email')}</th>
+            <th className="px-3 py-2 text-left">{t('users.roles')}</th>
+            <th className="px-3 py-2 text-left">{t('users.status')}</th>
+            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,24 +58,24 @@ export default function Users() {
               <td className="px-3 py-2">{u.roles.map((r) => r.name).join(', ') || '-'}</td>
               <td className="px-3 py-2">
                 {u.is_active ? (
-                  <span className="text-green-600">Active</span>
+                  <span className="text-green-600">{t('users.active')}</span>
                 ) : (
-                  <span className="text-red-500">Disabled</span>
+                  <span className="text-red-500">{t('users.disabled')}</span>
                 )}
-                {u.is_superuser && <span className="ml-1 text-amber-600">· Admin</span>}
+                {u.is_superuser && <span className="ml-1 text-amber-600">· {t('users.admin')}</span>}
               </td>
               <td className="px-3 py-2 space-x-2">
                 <button
                   className="text-blue-600 hover:underline text-xs"
                   onClick={() => setEditing(u)}
                 >
-                  Edit
+                  {t('common.edit')}
                 </button>
                 <button
                   className="text-red-500 hover:underline text-xs"
                   onClick={() => handleDelete(u.id)}
                 >
-                  Delete
+                  {t('common.delete')}
                 </button>
               </td>
             </tr>
@@ -81,21 +83,21 @@ export default function Users() {
         </tbody>
       </table>
       <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
-        <span>Total: {total}</span>
+        <span>{t('common.total')}: {total}</span>
         <button
           disabled={page <= 1}
           onClick={() => setPage(page - 1)}
           className="px-2 py-0.5 border rounded disabled:opacity-30"
         >
-          Prev
+          {t('common.prev')}
         </button>
-        <span>Page {page}</span>
+        <span>{t('common.page')} {page}</span>
         <button
           disabled={page * 20 >= total}
           onClick={() => setPage(page + 1)}
           className="px-2 py-0.5 border rounded disabled:opacity-30"
         >
-          Next
+          {t('common.next')}
         </button>
       </div>
 
@@ -115,6 +117,7 @@ function EditUserModal({
   onClose: () => void
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState(user.email)
   const [fullName, setFullName] = useState(user.full_name || '')
   const [isActive, setIsActive] = useState(user.is_active)
@@ -144,9 +147,9 @@ function EditUserModal({
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-auto">
-        <h2 className="text-lg font-bold mb-4">Edit User: {user.username}</h2>
+        <h2 className="text-lg font-bold mb-4">{t('users.editUser')}: {user.username}</h2>
         <label className="block mb-2 text-sm">
-          Email
+          {t('users.email')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={email}
@@ -154,7 +157,7 @@ function EditUserModal({
           />
         </label>
         <label className="block mb-2 text-sm">
-          Full Name
+          {t('users.fullName')}
           <input
             className="block w-full border rounded px-2 py-1 mt-0.5"
             value={fullName}
@@ -167,7 +170,7 @@ function EditUserModal({
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
           />
-          Active
+          {t('users.active')}
         </label>
         <label className="flex items-center gap-2 mb-2 text-sm">
           <input
@@ -175,10 +178,10 @@ function EditUserModal({
             checked={isSuperuser}
             onChange={(e) => setIsSuperuser(e.target.checked)}
           />
-          Superuser
+          {t('users.superuser')}
         </label>
         <div className="mb-4">
-          <span className="text-sm font-medium">Roles</span>
+          <span className="text-sm font-medium">{t('users.roles')}</span>
           <div className="max-h-32 overflow-auto border rounded p-2 mt-1">
             {allRoles.map((r) => (
               <label key={r.id} className="flex items-center gap-2 text-sm py-0.5">
@@ -202,10 +205,10 @@ function EditUserModal({
             onClick={handleSave}
             disabled={saving}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
           <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>

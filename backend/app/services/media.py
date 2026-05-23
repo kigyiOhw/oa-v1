@@ -4,9 +4,8 @@ import os
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.exceptions import OAException
-from app.core.storage import LocalStorage
+from app.core.storage import get_storage
 from app.models.media import MediaFile
 from app.models.user import User
 from app.repositories.media import MediaRepository
@@ -21,7 +20,7 @@ class MediaService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.repo = MediaRepository(session)
-        self.storage = LocalStorage(settings.UPLOAD_DIR)
+        self.storage = get_storage()
 
     async def get_all(self, page: int, page_size: int):
         return await self.repo.get_all(page, page_size)

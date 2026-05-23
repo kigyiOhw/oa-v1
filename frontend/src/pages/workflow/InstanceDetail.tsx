@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { workflowApi, InstanceItem, HistoryItem } from '../../api/workflow'
 
 export default function InstanceDetail() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [instance, setInstance] = useState<InstanceItem | null>(null)
@@ -25,14 +27,17 @@ export default function InstanceDetail() {
   }, [id])
 
   const handleCancel = async () => {
-    if (!confirm('Cancel this workflow instance?')) return
+    if (!confirm(t('workflow.cancelConfirm'))) return
     await workflowApi.cancelInstance(Number(id))
     fetchInstance()
   }
 
   const statusLabel = (s: string) => {
     const map: Record<string, string> = {
-      pending: 'Pending', approved: 'Approved', rejected: 'Rejected', cancelled: 'Cancelled',
+      pending: t('workflow.statusLabels.pending'),
+      approved: t('workflow.statusLabels.approved'),
+      rejected: t('workflow.statusLabels.rejected'),
+      cancelled: t('workflow.statusLabels.cancelled'),
     }
     return map[s] || s
   }
@@ -44,24 +49,27 @@ export default function InstanceDetail() {
     return node?.label || nodeId
   }
 
-  if (loading) return <div className="p-8 text-gray-500">Loading...</div>
+  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
   if (!instance) return null
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <button
-        className="text-blue-600 hover:underline text-sm mb-4 inline-block"
-        onClick={() => navigate('/workflow/my')}
-      >
-        &larr; Back to My Instances
-      </button>
+      <div className="flex gap-4 mb-4">
+        <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
+        <button
+          className="text-blue-600 hover:underline text-sm"
+          onClick={() => navigate('/workflow/my')}
+        >
+          &larr; {t('workflow.backToMyInstances')}
+        </button>
+      </div>
 
       <div className="bg-white rounded-lg border p-6 mb-6">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold mb-2">{instance.title}</h1>
             <p className="text-sm text-gray-500">
-              Workflow: {instance.workflow_def?.name || 'Unknown'} &middot; v{instance.workflow_def?.version}
+              {t('workflow.workflow')}: {instance.workflow_def?.name || 'Unknown'} &middot; v{instance.workflow_def?.version}
             </p>
           </div>
           <div className="text-right">
@@ -80,20 +88,20 @@ export default function InstanceDetail() {
             onClick={handleCancel}
             className="mt-4 px-3 py-1 border border-red-300 text-red-600 rounded text-sm hover:bg-red-50"
           >
-            Cancel Instance
+            {t('workflow.cancelInstance')}
           </button>
         )}
       </div>
 
       {instance.tasks && instance.tasks.length > 0 && (
         <div className="bg-white rounded-lg border p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-3">Current Tasks</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('workflow.currentTasks')}</h2>
           <table className="w-full text-sm border">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left">Node</th>
-                <th className="px-3 py-2 text-left">Assignee</th>
-                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">{t('workflow.node')}</th>
+                <th className="px-3 py-2 text-left">{t('workflow.assignee')}</th>
+                <th className="px-3 py-2 text-left">{t('workflow.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -111,7 +119,7 @@ export default function InstanceDetail() {
 
       {instance.history && instance.history.length > 0 && (
         <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-lg font-semibold mb-3">Approval History</h2>
+          <h2 className="text-lg font-semibold mb-3">{t('workflow.approvalHistory')}</h2>
           <Timeline history={instance.history} nodeLabel={nodeLabel} />
         </div>
       )}
