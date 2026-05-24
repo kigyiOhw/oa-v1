@@ -18,6 +18,7 @@ from app.schemas.workflow import (
     WorkflowDefCreate,
     WorkflowDefUpdate,
 )
+from app.services.notification import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,16 @@ class WorkflowEngineService:
         instance.current_node_id = next_node["id"]
         await self.instance_repo.update(instance)
 
+        await NotificationService.send_notification(
+            self.session,
+            user_id=assignee_id,
+            type_="workflow",
+            title="New Task",
+            message=f"You have a new approval task: {instance.title}",
+            reference_type="task",
+            reference_id=task.id,
+        )
+
         logger.info("----------WorkflowEngineService.start_instance, done, instance_id=%s, first_task=%s, assignee=%s",
                     instance.id, task.id, assignee_id)
         return instance
@@ -221,6 +232,42 @@ class WorkflowEngineService:
                     from app.services.leave import LeaveService
                     leave_svc = LeaveService(self.session)
                     await leave_svc.sync_status(leave)
+
+            # If this is an Expense Approval workflow, sync expense status
+            if instance.workflow_def.name == "Expense Approval":
+                from app.models.expense_request import ExpenseRequest
+                expense = (await self.session.execute(
+                    select(ExpenseRequest).where(
+                        ExpenseRequest.workflow_instance_id == instance.id
+                    )
+                )).scalar_one_or_none()
+                if expense:
+                    from app.services.expense import ExpenseService
+                    expense_svc = ExpenseService(self.session)
+                    await expense_svc.sync_status(expense)
+
+            # If this is an Overtime Approval workflow, sync overtime status
+            if instance.workflow_def.name == "Overtime Approval":
+                from app.models.overtime_request import OvertimeRequest
+                overtime = (await self.session.execute(
+                    select(OvertimeRequest).where(
+                        OvertimeRequest.workflow_instance_id == instance.id
+                    )
+                )).scalar_one_or_none()
+                if overtime:
+                    from app.services.overtime import OvertimeService
+                    overtime_svc = OvertimeService(self.session)
+                    await overtime_svc.sync_status(overtime)
+
+            await NotificationService.send_notification(
+                self.session,
+                user_id=instance.initiator_id,
+                type_="workflow",
+                title="Approval Result",
+                message=f"Your request '{instance.title}' was {outcome}",
+                reference_type="instance",
+                reference_id=instance.id,
+            )
         else:
             logger.info("----------WorkflowEngineService.process_task, resolving_next_assignee, node=%s, assignee_type=%s",
                         next_node["id"], next_node.get("assignee_type"))
@@ -235,6 +282,16 @@ class WorkflowEngineService:
             await self.task_repo.create(new_task)
             logger.info("----------WorkflowEngineService.process_task, next_task_created, task_id=%s, assignee_id=%s",
                         new_task.id, assignee_id)
+
+            await NotificationService.send_notification(
+                self.session,
+                user_id=assignee_id,
+                type_="workflow",
+                title="New Task",
+                message=f"You have a new approval task: {instance.title}",
+                reference_type="task",
+                reference_id=new_task.id,
+            )
 
         await self.instance_repo.update(instance)
         logger.info("----------WorkflowEngineService.process_task, done, task_id=%s, action=%s, instance=%s, instance_status=%s",

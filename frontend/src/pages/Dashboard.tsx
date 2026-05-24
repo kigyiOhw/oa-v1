@@ -18,10 +18,11 @@ export default function Dashboard() {
 
   const shortcutItems = [
     { label: t('dashboard.shortcuts.leave'), icon: '📝', to: '/leaves', requiresAuth: true },
-    { label: t('dashboard.shortcuts.expense'), icon: '💰', to: '/workflow/my', requiresAuth: true },
+    { label: t('dashboard.shortcuts.expense'), icon: '💰', to: '/expenses', requiresAuth: true },
+    { label: t('dashboard.shortcuts.overtime'), icon: '⏰', to: '/overtimes', requiresAuth: true },
     { label: t('dashboard.shortcuts.approval'), icon: '✅', to: '/workflow/tasks', requiresAuth: true },
-    { label: t('dashboard.shortcuts.notification'), icon: '🔔', to: '/workflow/tasks', requiresAuth: true },
-    { label: t('dashboard.shortcuts.contacts'), icon: '👥', to: '/admin/users', requiresAuth: true },
+    { label: t('dashboard.shortcuts.notification'), icon: '🔔', to: '/notifications', requiresAuth: true },
+    { label: t('dashboard.shortcuts.contacts'), icon: '👥', to: '/contacts', requiresAuth: true },
     { label: t('dashboard.shortcuts.myTasks'), icon: '📋', to: '/workflow/tasks', requiresAuth: true },
     { label: t('dashboard.shortcuts.attendance'), icon: '🕐', to: '/attendance', requiresAuth: true },
     { label: t('asset.myAssets'), icon: '💻', to: '/my-assets', requiresAuth: true },
@@ -131,6 +132,32 @@ export default function Dashboard() {
           ))}
         </div>
 
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('dashboard.sections.latestAnnouncements')}</h3>
+          {announcements.length > 0 ? (
+            <div className="space-y-3">
+              {announcements.map((ann) => (
+                <div key={ann.id} className="rounded-lg bg-white shadow-sm p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    {ann.is_pinned && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">置顶</span>}
+                    <h4 className="font-semibold text-gray-900">{ann.title}</h4>
+                  </div>
+                  <div className="prose prose-sm max-w-none text-gray-600 line-clamp-3">
+                    <ReactMarkdown>{ann.content}</ReactMarkdown>
+                  </div>
+                  {ann.published_at && (
+                    <p className="mt-2 text-xs text-gray-400">{new Date(ann.published_at).toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US')}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg bg-white shadow-sm p-6 text-center text-gray-400 text-sm">
+              {t('dashboard.empty.noAnnouncements')}
+            </div>
+          )}
+        </div>
+
         <div className="rounded-lg bg-white shadow-sm overflow-hidden">
           <h3 className="px-4 pt-4 text-lg font-semibold text-gray-900">{t('dashboard.sections.companyStyle')}</h3>
           {mediaFiles.length > 0 ? (
@@ -162,51 +189,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('dashboard.sections.latestAnnouncements')}</h3>
-          {announcements.length > 0 ? (
-            <div className="space-y-3">
-              {announcements.map((ann) => (
-                <div key={ann.id} className="rounded-lg bg-white shadow-sm p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    {ann.is_pinned && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">置顶</span>}
-                    <h4 className="font-semibold text-gray-900">{ann.title}</h4>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-gray-600 line-clamp-3">
-                    <ReactMarkdown>{ann.content}</ReactMarkdown>
-                  </div>
-                  {ann.published_at && (
-                    <p className="mt-2 text-xs text-gray-400">{new Date(ann.published_at).toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US')}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-white shadow-sm p-6 text-center text-gray-400 text-sm">
-              {t('dashboard.empty.noAnnouncements')}
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('dashboard.sections.intranetNav')}</h3>
-          {quickLinks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {quickLinks.map((link) => (
-                <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-sm hover:shadow-md transition-shadow text-sm">
-                  <span>{iconMap[link.icon] || '🔗'}</span>
-                  <span className="text-gray-700">{link.name}</span>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-white shadow-sm p-6 text-center text-gray-400 text-sm">
-              {t('dashboard.empty.noLinks')}
-            </div>
-          )}
-        </div>
-
         {isAuthenticated && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('dashboard.sections.myItems')}</h3>
@@ -226,6 +208,25 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('dashboard.sections.intranetNav')}</h3>
+          {quickLinks.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {quickLinks.map((link) => (
+                <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-sm hover:shadow-md transition-shadow text-sm">
+                  <span>{iconMap[link.icon] || '🔗'}</span>
+                  <span className="text-gray-700">{link.name}</span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg bg-white shadow-sm p-6 text-center text-gray-400 text-sm">
+              {t('dashboard.empty.noLinks')}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )

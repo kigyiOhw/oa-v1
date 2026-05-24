@@ -65,7 +65,8 @@
       "notification": "通知",
       "contacts": "通讯录",
       "myTasks": "我的待办",
-      "attendance": "考勤"
+      "attendance": "考勤",
+      "overtime": "加班"
     },
     "sections": {
       "companyStyle": "公司风采",
@@ -91,7 +92,8 @@
     "announcements": "公告管理",
     "media": "媒体管理",
     "settings": "公司设置",
-    "employees": "员工管理"
+    "employees": "员工管理",
+    "auditLogs": "审计日志"
   },
   "users": {
     "title": "用户管理",
@@ -149,10 +151,9 @@
     "invalidJson": "JSON 格式错误"
   },
   "announcements": {
-    "title": "公告管理",
+    "title": "标题",
     "createAnnouncement": "发布公告",
     "editAnnouncement": "编辑公告",
-    "title": "标题",
     "content": "内容 (Markdown)",
     "status": "状态",
     "pinned": "置顶",
@@ -377,6 +378,29 @@
     "lateTolerance": "迟到容忍度（分钟）",
     "enableMandatory": "启用强制打卡"
   },
+  "notification": {
+    "title": "通知中心",
+    "all": "全部",
+    "unread": "未读",
+    "markAllRead": "全部已读",
+    "noNotifications": "暂无通知",
+    "viewAll": "查看全部",
+    "viewDetail": "查看详情",
+    "types": {
+      "workflow": "工作流",
+      "asset": "资产",
+      "announcement": "公告"
+    }
+  },
+  "contacts": {
+    "title": "通讯录",
+    "searchPlaceholder": "搜索姓名、用户名或手机号...",
+    "departmentTree": "组织架构",
+    "noContacts": "未找到联系人",
+    "email": "邮箱",
+    "phone": "电话",
+    "department": "部门"
+  },
   "consumable": {
     "title": "耗材管理",
     "createConsumable": "新增耗材",
@@ -396,5 +420,88 @@
     "noConsumables": "暂无耗材",
     "deleteConfirm": "确定删除此耗材？",
     "insufficientStock": "库存不足，当前库存 {stock} {unit}"
+  },
+  "expense": {
+    "myExpenses": "我的报销",
+    "newExpense": "新建报销",
+    "editExpense": "编辑报销",
+    "expenseDetail": "报销详情",
+    "expenseType": "费用类型",
+    "amount": "金额",
+    "description": "说明",
+    "descriptionPlaceholder": "请输入报销说明...",
+    "attachmentUrls": "附件链接（每行一个）",
+    "attachmentUrlsPlaceholder": "请输入发票/图片链接，每行一个...",
+    "attachments": "附件",
+    "saveDraft": "保存草稿",
+    "submitApproval": "提交审批",
+    "cancelRequest": "撤销申请",
+    "viewWorkflowInstance": "查看审批流程",
+    "backToMyExpenses": "返回我的报销",
+    "all": "全部",
+    "type": "类型",
+    "status": "状态",
+    "created": "创建时间",
+    "notFound": "报销申请未找到",
+    "deleteDraftConfirm": "确认删除此草稿？",
+    "submitConfirm": "确认提交审批？",
+    "cancelConfirm": "确认撤销此申请？",
+    "typeLabels": {
+      "travel": "差旅费",
+      "office": "办公用品",
+      "entertainment": "招待费",
+      "other": "其他"
+    },
+    "statusLabels": {
+      "draft": "草稿",
+      "submitted": "已提交",
+      "approved": "已通过",
+      "rejected": "已驳回",
+      "cancelled": "已取消"
+    }
+  },
+  "auditLogs": {
+    "title": "审计日志",
+    "action": "操作",
+    "resourceType": "资源类型",
+    "resourceId": "资源ID",
+    "operator": "操作人",
+    "time": "时间",
+    "details": "详情",
+    "startDate": "开始日期",
+    "endDate": "结束日期",
+    "records": "条"
+  },
+  "overtime": {
+    "myOvertimes": "我的加班",
+    "newOvertime": "新建加班",
+    "editOvertime": "编辑加班",
+    "overtimeDetail": "加班详情",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "duration": "时长",
+    "hours": "小时",
+    "timeRange": "时间段",
+    "reason": "原因",
+    "reasonPlaceholder": "请输入加班原因...",
+    "saveDraft": "保存草稿",
+    "submitApproval": "提交审批",
+    "cancelRequest": "撤销申请",
+    "viewWorkflowInstance": "查看审批流程",
+    "backToMyOvertimes": "返回我的加班",
+    "all": "全部",
+    "status": "状态",
+    "created": "创建时间",
+    "notFound": "加班申请未找到",
+    "deleteDraftConfirm": "确认删除此草稿？",
+    "submitConfirm": "确认提交审批？",
+    "cancelConfirm": "确认撤销此申请？",
+    "statusLabels": {
+      "draft": "草稿",
+      "submitted": "已提交",
+      "approved": "已通过",
+      "rejected": "已驳回",
+      "cancelled": "已取消"
+    }
   }
 }

@@ -84,6 +84,7 @@ function DeptNode({
   onEdit: (d: DepartmentItem) => void
   onDelete: (id: number) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div>
       <div
@@ -100,13 +101,13 @@ function DeptNode({
           className="text-blue-600 hover:underline text-xs"
           onClick={() => onEdit(dept)}
         >
-          Edit
+          {t('common.edit')}
         </button>
         <button
           className="text-red-500 hover:underline text-xs"
           onClick={() => onDelete(dept.id)}
         >
-          Delete
+          {t('common.delete')}
         </button>
       </div>
       {dept.children.map((child) => (

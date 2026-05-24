@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-9 complete: auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, attendance with check-in/out + team view. Next: **Phase 10** (notifications + contacts).
+Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-12 complete: auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, attendance with check-in/out + team view, notification center with bell + persistent storage, contacts directory with department tree + search, expense reimbursement + overtime request modules with leave conflict validation, audit logging (automatic via SQLAlchemy after_flush events + contextvars, zero-intrusion to existing code). Currently in **Phase 13** (data dashboards).
 
 ## Common Commands
 
@@ -66,16 +66,16 @@ Roles have a `role_type` field: `super_admin` (full access), `module_admin` (mod
 `backend/app/core/config.py` uses `pydantic-settings` with `.env` file support, case-sensitive. Defaults point to the docker-compose services (`oa:oa_secret@localhost:5432/oa_db`).
 
 ### Frontend
-- **State**: Zustand stores — `auth.ts` (auth state + token persistence), `notification.ts` (in-memory notifications), `theme.ts` (background theme: color/gradient/image, persisted to localStorage).
-- **Routing**: React Router v6 — Dashboard `/`, Login `/login`, Register `/register`, Profile `/profile`, MyAssets `/my-assets`, Workflow (`/workflow/my`, `/workflow/tasks`, `/workflow/tasks/:id`, `/workflow/instances/:id`), Leaves (`/leaves`, `/leaves/new`, `/leaves/:id`, `/leaves/:id/edit`), Attendance (`/attendance`, `/attendance/team`, `/attendance/team/:userId`), Admin (`/admin/*` including `/admin/users`, `/admin/roles` (with wizard for role type/scope), `/admin/departments`, `/admin/workflow-defs`, `/admin/announcements`, `/admin/media`, `/admin/employees`, `/admin/employees/:id`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/:id`, `/admin/assets/:id/edit`, `/admin/asset-categories`, `/admin/consumables`, `/admin/consumables/new`, `/admin/consumables/:id`, `/admin/consumables/:id/edit`, `/admin/settings`, `/admin/attendance-config`).
-- **Components**: `ThemeSwitcher` (floating FAB for background customization), `LanguageSwitcher` (EN/中 toggle), `ErrorBoundary`, `ProtectedRoute`, `PermissionGuard`, `AdminLayout`.
+- **State**: Zustand stores — `auth.ts` (auth state + token persistence), `notification.ts` (persistent notifications synced with backend API), `theme.ts` (background theme: color/gradient/image, persisted to localStorage).
+- **Routing**: React Router v6 — Dashboard `/`, Login `/login`, Register `/register`, Profile `/profile`, MyAssets `/my-assets`, Workflow (`/workflow/my`, `/workflow/tasks`, `/workflow/tasks/:id`, `/workflow/instances/:id`), Leaves (`/leaves`, `/leaves/new`, `/leaves/:id`, `/leaves/:id/edit`), Expenses (`/expenses`, `/expenses/new`, `/expenses/:id`, `/expenses/:id/edit`), Overtimes (`/overtimes`, `/overtimes/new`, `/overtimes/:id`, `/overtimes/:id/edit`), Attendance (`/attendance`, `/attendance/team`, `/attendance/team/:userId`), Notifications (`/notifications`), Contacts (`/contacts`), Admin (`/admin/*` including `/admin/users`, `/admin/roles` (with wizard for role type/scope), `/admin/departments`, `/admin/workflow-defs`, `/admin/announcements`, `/admin/media`, `/admin/employees`, `/admin/employees/:id`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/:id`, `/admin/assets/:id/edit`, `/admin/asset-categories`, `/admin/consumables`, `/admin/consumables/new`, `/admin/consumables/:id`, `/admin/consumables/:id/edit`, `/admin/settings`, `/admin/attendance-config`, `/admin/audit-logs`).
+- **Components**: `ThemeSwitcher` (floating FAB for background customization), `NotificationBell` (fixed bell with unread badge + dropdown, bottom-left), `LanguageSwitcher` (EN/中 toggle), `ErrorBoundary`, `ProtectedRoute`, `PermissionGuard`, `AdminLayout`.
 - **API**: Axios instance with interceptors for token injection and 401 refresh handling.
 - **Proxy**: Vite dev server proxies `/api` → `localhost:8000` and `/ws` → `ws://localhost:8000`.
 
 ### Database
 All models use `Base = declarative_base()` from `db/base.py`. New models must be imported in `alembic/env.py` for autogenerate to detect them.
 
-Tables: `users`, `roles` (incl. `role_type`, `admin_scope` from Phase 8), `permissions`, `role_permissions`, `user_roles`, `departments`, `workflow_defs`, `workflow_instances`, `workflow_tasks`, `workflow_history`, `announcements`, `media_files`, `settings`, `leave_requests`, `employee_profiles`, `asset_categories`, `assets`, `asset_assignments`, `consumables`, `consumable_records`, `attendance_records` (Phase 9).
+Tables: `users`, `roles` (incl. `role_type`, `admin_scope` from Phase 8), `permissions`, `role_permissions`, `user_roles`, `departments`, `workflow_defs`, `workflow_instances`, `workflow_tasks`, `workflow_history`, `announcements`, `media_files`, `settings`, `leave_requests`, `employee_profiles`, `asset_categories`, `assets`, `asset_assignments`, `consumables`, `consumable_records`, `attendance_records` (Phase 9), `notifications` (Phase 10), `expense_requests` (Phase 11), `overtime_requests` (Phase 11), `audit_logs` (Phase 12).
 
 ## Key Dependencies
 | Package | Purpose |

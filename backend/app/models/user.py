@@ -80,6 +80,9 @@ class User(Base):
     employee_profile: Mapped["EmployeeProfile | None"] = relationship(
         "EmployeeProfile", back_populates="user", uselist=False
     )
+    notifications: Mapped[list["Notification"]] = relationship(
+        "Notification", back_populates="user"
+    )
 
     @property
     def permissions(self) -> list[str]:

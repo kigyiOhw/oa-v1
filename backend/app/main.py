@@ -11,15 +11,20 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import Response
 
+from app.api.v1.audit import router as audit_router
 from app.api.v1.announcements import router as announcements_router
 from app.api.v1.attendance import router as attendance_router
 from app.api.v1.assets import cat_router as asset_categories_router, asset_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.contacts import router as contacts_router
 from app.api.v1.consumables import router as consumables_router
 from app.api.v1.departments import router as departments_router
 from app.api.v1.employees import router as employees_router
+from app.api.v1.expense import router as expense_router
 from app.api.v1.leave import router as leave_router
+from app.api.v1.overtime import router as overtime_router
 from app.api.v1.media import router as media_router
+from app.api.v1.notifications import router as notifications_router
 from app.api.v1.permissions import router as permissions_router
 from app.api.v1.roles import router as roles_router
 from app.api.v1.settings import router as settings_router
@@ -27,6 +32,7 @@ from app.api.v1.users import router as users_router
 from app.api.v1.websocket import router as ws_router
 from app.api.v1.workflow import router as workflow_router
 from app.api.v1.workflow_defs import router as workflow_defs_router
+from app.core.audit import register_audit_listener
 from app.core.config import settings
 from app.core.exceptions import OAException, oa_exception_handler
 from app.core.limiter import limiter
@@ -39,6 +45,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
     setup_logging(log_level="DEBUG" if settings.DEBUG else "INFO")
+    register_audit_listener()
     logger.info("=" * 50)
     logger.info("Application starting up | name=%s debug=%s", settings.APP_NAME, settings.DEBUG)
     logger.info("Database URL: %s", settings.DATABASE_URL.replace("://", "://***@"))
@@ -106,9 +113,14 @@ app.include_router(attendance_router, prefix="/api/v1")
 app.include_router(asset_categories_router, prefix="/api/v1")
 app.include_router(asset_router, prefix="/api/v1")
 app.include_router(consumables_router, prefix="/api/v1")
+app.include_router(contacts_router, prefix="/api/v1")
+app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(leave_router, prefix="/api/v1")
 app.include_router(media_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
+app.include_router(expense_router, prefix="/api/v1")
+app.include_router(overtime_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")
 app.include_router(ws_router)
 
 

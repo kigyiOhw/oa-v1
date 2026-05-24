@@ -234,21 +234,35 @@ Axios 拦截器统一处理：Token 注入、401 跳转、错误提示、Loading
 
 详见 `docs/phase9-plan.md`
 
-### Phase 10: 通知中心 + 通讯录 (Week 10)
-- [ ] 通知持久化（`notifications` 表），已读/未读状态，分页历史
-- [ ] 通知类型：审批结果、新待办、系统公告、资产分配
-- [ ] 通讯录：按部门树浏览员工，搜索姓名/用户名
-- [ ] 查看同事基本信息（部门、手机号、邮箱，不暴露敏感字段）
+### Phase 10: 通知中心 + 通讯录 (Week 10) ✅ 已完成
+- [✓] 通知持久化（`notifications` 表），已读/未读状态，分页历史
+- [✓] 通知类型：审批结果、新待办、系统公告、资产分配
+- [✓] 通讯录：按部门树浏览员工，搜索姓名/用户名
+- [✓] 查看同事基本信息（部门、手机号、邮箱，不暴露敏感字段）
+- [✓] 前端：通知铃铛组件（左下角浮层）+ 通知列表页 + 通讯录页
+- [✓] WebSocket 实时推送通知，hook 自动重连
+- [✓] 权限码：`notification:read`、`contacts:read`，已分配至 user/dept_admin 角色
 
-### Phase 11: 报销 + 加班模块 (Week 11)
-- [ ] 复用工作流引擎，配置报销、加班流程
-- [ ] 报销单附件上传（发票）
-- [ ] 加班申请与请假联动校验
+### Phase 11: 报销 + 加班模块 (Week 11) ✅ 已完成
+- [✓] `expense_requests` 表：费用类型 (travel/office/entertainment/other)、金额 (Numeric)、描述、附件 URL (JSONB)
+- [✓] `overtime_requests` 表：开始/结束时间、时长、原因，加班-请假冲突校验
+- [✓] 复用工作流引擎，报销 (Expense Approval) 和加班 (Overtime Approval) 流程
+- [✓] 完整前端页面：列表 (状态筛选/分页)、创建/编辑、详情 (关联审批实例)
+- [✓] 前端路由：`/expenses`, `/expenses/new`, `/expenses/:id`, `/expenses/:id/edit`, `/overtimes`, `/overtimes/new`, `/overtimes/:id`, `/overtimes/:id/edit`
+- [✓] i18n 中英文全覆盖
+- [✓] 6 个新权限码：`expense:create/read/delete`, `overtime:create/read/delete`，已分配至 user/dept_admin 角色
+- [✓] Dashboard 快捷入口：报销 (`/expenses`)、加班 (`/overtimes`)
 
-### Phase 12: 审计日志 (Week 12)
-- [ ] `audit_logs` 表：操作人、操作类型、目标资源、详情、IP、时间
-- [ ] 审计范围：用户创建/删除、权限变更、离职操作、资产分配/归还、敏感数据修改
-- [ ] 只读查询页面（管理员可见），支持按操作类型和时间范围过滤
+### Phase 12: 审计日志 (Week 12) ✅ 已完成
+- [✓] 自动审计捕获：SQLAlchemy `after_flush` 事件 + `contextvars` 传递用户/IP 上下文，零侵入已有代码
+- [✓] `audit_logs` 表：操作人 (FK users SET NULL)、操作类型 (create/update/delete)、资源类型 (模型类名)、资源 ID、变更详情 (JSONB)、IP 地址
+- [✓] 审计范围白名单：User, Role, Permission, Department, WorkflowDef, Announcement, Setting, Asset, AssetAssignment, AssetCategory, Consumable, EmployeeProfile, LeaveRequest, ExpenseRequest, OvertimeRequest, WorkflowInstance, WorkflowTask
+- [✓] 创建记录全部字段值，更新仅记录变更字段 `{changes: {field: {old, new}}}`，删除记录删除前快照
+- [✓] 权限 `audit:read` 仅分配 super_admin
+- [✓] 只读查询 API：`GET /api/v1/audit-logs`，支持 action/resource_type/日期范围过滤 + 分页
+- [✓] 前端管理页 `/admin/audit-logs`：过滤条件 + 表格（时间/操作人/操作/资源/IP/详情展开）
+
+详见 `docs/phase12-plan.md`
 
 ### Phase 13: 数据看板 (Week 13)
 - [ ] 首页仪表盘接入真实统计数据
@@ -292,4 +306,4 @@ npm run dev
 
 ---
 
-**下一步**：Phase 10 — 通知中心 + 通讯录（详见 `docs/phase10-plan.md`）。
+**下一步**：Phase 13 — 数据看板。

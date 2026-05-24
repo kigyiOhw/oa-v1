@@ -19,6 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { to: '/admin/assets', label: t('asset.title'), permission: 'asset:read' },
     { to: '/admin/consumables', label: t('consumable.title'), permission: 'consumable:read' },
     { to: '/admin/attendance-config', label: t('attendance.config'), permission: 'attendance:update' },
+    { to: '/admin/audit-logs', label: t('admin.auditLogs'), permission: 'audit:read' },
     { to: '/admin/settings', label: t('admin.settings'), permission: 'announcement:update' },
   ]
 

@@ -65,7 +65,8 @@
       "notification": "Notices",
       "contacts": "Contacts",
       "myTasks": "My Tasks",
-      "attendance": "Attendance"
+      "attendance": "Attendance",
+      "overtime": "Overtime"
     },
     "sections": {
       "companyStyle": "Company Gallery",
@@ -91,7 +92,8 @@
     "announcements": "Announcements",
     "media": "Media",
     "settings": "Company Settings",
-    "employees": "Employees"
+    "employees": "Employees",
+    "auditLogs": "Audit Logs"
   },
   "users": {
     "title": "Users",
@@ -149,10 +151,9 @@
     "invalidJson": "Invalid JSON"
   },
   "announcements": {
-    "title": "Announcements",
+    "title": "Title",
     "createAnnouncement": "Create Announcement",
     "editAnnouncement": "Edit Announcement",
-    "title": "Title",
     "content": "Content (Markdown)",
     "status": "Status",
     "pinned": "Pinned",
@@ -377,6 +378,29 @@
     "lateTolerance": "Late Tolerance (minutes)",
     "enableMandatory": "Enable mandatory check-in"
   },
+  "notification": {
+    "title": "Notifications",
+    "all": "All",
+    "unread": "Unread",
+    "markAllRead": "Mark All Read",
+    "noNotifications": "No notifications",
+    "viewAll": "View All",
+    "viewDetail": "View Detail",
+    "types": {
+      "workflow": "Workflow",
+      "asset": "Asset",
+      "announcement": "Announcement"
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "searchPlaceholder": "Search by name, username or phone...",
+    "departmentTree": "Departments",
+    "noContacts": "No contacts found",
+    "email": "Email",
+    "phone": "Phone",
+    "department": "Department"
+  },
   "consumable": {
     "title": "Consumable Management",
     "createConsumable": "New Consumable",
@@ -396,5 +420,88 @@
     "noConsumables": "No consumables",
     "deleteConfirm": "Delete this consumable?",
     "insufficientStock": "Insufficient stock: {stock} {unit}"
+  },
+  "expense": {
+    "myExpenses": "My Expense Reports",
+    "newExpense": "New Expense Report",
+    "editExpense": "Edit Expense Report",
+    "expenseDetail": "Expense Detail",
+    "expenseType": "Expense Type",
+    "amount": "Amount",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter expense description...",
+    "attachmentUrls": "Attachment URLs (one per line)",
+    "attachmentUrlsPlaceholder": "Enter invoice/image URLs, one per line...",
+    "attachments": "Attachments",
+    "saveDraft": "Save Draft",
+    "submitApproval": "Submit for Approval",
+    "cancelRequest": "Cancel Request",
+    "viewWorkflowInstance": "View Workflow Instance",
+    "backToMyExpenses": "Back to My Expenses",
+    "all": "All",
+    "type": "Type",
+    "status": "Status",
+    "created": "Created",
+    "notFound": "Expense request not found",
+    "deleteDraftConfirm": "Delete this draft?",
+    "submitConfirm": "Submit for approval?",
+    "cancelConfirm": "Cancel this request?",
+    "typeLabels": {
+      "travel": "Travel",
+      "office": "Office Supplies",
+      "entertainment": "Entertainment",
+      "other": "Other"
+    },
+    "statusLabels": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    }
+  },
+  "auditLogs": {
+    "title": "Audit Logs",
+    "action": "Action",
+    "resourceType": "Resource Type",
+    "resourceId": "Resource ID",
+    "operator": "Operator",
+    "time": "Time",
+    "details": "Details",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "records": "records"
+  },
+  "overtime": {
+    "myOvertimes": "My Overtime Requests",
+    "newOvertime": "New Overtime Request",
+    "editOvertime": "Edit Overtime Request",
+    "overtimeDetail": "Overtime Detail",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "duration": "Duration",
+    "hours": "Hours",
+    "timeRange": "Time Range",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter reason for overtime...",
+    "saveDraft": "Save Draft",
+    "submitApproval": "Submit for Approval",
+    "cancelRequest": "Cancel Request",
+    "viewWorkflowInstance": "View Workflow Instance",
+    "backToMyOvertimes": "Back to My Overtimes",
+    "all": "All",
+    "status": "Status",
+    "created": "Created",
+    "notFound": "Overtime request not found",
+    "deleteDraftConfirm": "Delete this draft?",
+    "submitConfirm": "Submit for approval?",
+    "cancelConfirm": "Cancel this request?",
+    "statusLabels": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    }
   }
 }

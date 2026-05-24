@@ -16,6 +16,7 @@ from app.schemas.asset import (
     AssetCreate,
     AssetUpdate,
 )
+from app.services.notification import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +151,16 @@ class AssetService:
             notes=notes,
             operator_id=operator_id,
         ))
+
+        await NotificationService.send_notification(
+            self.session,
+            user_id=user_id,
+            type_="asset",
+            title="Asset Assigned",
+            message=f"You have been assigned: {asset.name} ({asset.asset_code})",
+            reference_type="asset",
+            reference_id=asset_id,
+        )
         return asset
 
     async def return_asset(self, asset_id: int, operator_id: int, notes: str | None = None) -> Asset:

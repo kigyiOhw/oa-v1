@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import ALL_PERMISSIONS
 from app.db.base import AsyncSessionLocal
@@ -85,6 +86,15 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 "attendance:read": "View own attendance",
                 "attendance:subordinates:read": "View subordinates attendance",
                 "attendance:update": "Manage attendance config",
+                "notification:read": "View notifications",
+                "contacts:read": "View contacts directory",
+                "expense:create": "Create expense requests",
+                "expense:read": "View expense requests",
+                "expense:delete": "Delete expense requests",
+                "overtime:create": "Create overtime requests",
+                "overtime:read": "View overtime requests",
+                "overtime:delete": "Delete overtime requests",
+                "audit:read": "View audit logs",
             }.get(code, "")
             new_perms.append(Permission(code=code, description=desc))
 
@@ -96,7 +106,9 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
     all_perms = list((await db.execute(select(Permission))).scalars().all())
 
-    super_admin_role = (await db.execute(select(Role).where(Role.name == "super_admin"))).scalar_one_or_none()
+    super_admin_role = (await db.execute(
+        select(Role).where(Role.name == "super_admin").options(selectinload(Role.permissions))
+    )).scalar_one_or_none()
     if not super_admin_role:
         super_admin_role = Role(name="super_admin", description="超级管理员", role_type="super_admin", admin_scope="global")
         super_admin_role.permissions = all_perms
@@ -112,9 +124,11 @@ async def seed_initial_data(db: AsyncSession) -> None:
         await db.flush()
         logger.info("Renamed legacy admin role to admin_legacy")
 
-    user_role = (await db.execute(select(Role).where(Role.name == "user"))).scalar_one_or_none()
+    user_codes = {"user:read", "role:read", "permission:read", "dept:read", "announcement:read", "media:read", "leave:read", "leave:create", "leave:delete", "employee:read", "employee:update", "asset:read", "consumable:read", "attendance:check-in", "attendance:read", "notification:read", "contacts:read", "expense:create", "expense:read", "expense:delete", "overtime:create", "overtime:read", "overtime:delete"}
+    user_role = (await db.execute(
+        select(Role).where(Role.name == "user").options(selectinload(Role.permissions))
+    )).scalar_one_or_none()
     if not user_role:
-        user_codes = {"user:read", "role:read", "permission:read", "dept:read", "announcement:read", "media:read", "leave:read", "leave:create", "leave:delete", "employee:read", "employee:update", "asset:read", "consumable:read", "attendance:check-in", "attendance:read"}
         user_perms = [p for p in all_perms if p.code in user_codes]
         user_role = Role(name="user", description="普通用户", role_type="user")
         user_role.permissions = user_perms
@@ -122,22 +136,36 @@ async def seed_initial_data(db: AsyncSession) -> None:
         await db.flush()
         logger.info("Seeded user role with %d permissions", len(user_perms))
     else:
-        # update existing user role to have role_type
+        # update existing user role to have role_type and add missing permissions
         if not user_role.role_type or user_role.role_type == "user":
             user_role.role_type = "user"
-            logger.info("Updated existing user role role_type")
+        existing_codes = {p.code for p in user_role.permissions}
+        missing = [p for p in all_perms if p.code in user_codes and p.code not in existing_codes]
+        if missing:
+            user_role.permissions.extend(missing)
+            logger.info("Added %d new permissions to existing user role", len(missing))
 
-    dept_admin_role = (await db.execute(select(Role).where(Role.name == "dept_admin"))).scalar_one_or_none()
+    dept_codes = {"employee:read", "employee:update", "asset:read", "asset:update", "consumable:read", "consumable:update",
+                   "dept:read", "user:read", "leave:read", "announcement:read", "media:read", "media:upload",
+                   "attendance:check-in", "attendance:read", "attendance:subordinates:read",
+                   "notification:read", "contacts:read",
+                   "expense:read", "overtime:read"}
+    dept_admin_role = (await db.execute(
+        select(Role).where(Role.name == "dept_admin").options(selectinload(Role.permissions))
+    )).scalar_one_or_none()
     if not dept_admin_role:
-        dept_codes = {"employee:read", "employee:update", "asset:read", "asset:update", "consumable:read", "consumable:update",
-                       "dept:read", "user:read", "leave:read", "announcement:read", "media:read", "media:upload",
-                       "attendance:check-in", "attendance:read", "attendance:subordinates:read"}
         dept_perms = [p for p in all_perms if p.code in dept_codes]
         dept_admin_role = Role(name="dept_admin", description="部门管理员", role_type="dept_admin", admin_scope="department")
         dept_admin_role.permissions = dept_perms
         db.add(dept_admin_role)
         await db.flush()
         logger.info("Seeded dept_admin role with %d permissions", len(dept_perms))
+    else:
+        existing_codes = {p.code for p in dept_admin_role.permissions}
+        missing = [p for p in all_perms if p.code in dept_codes and p.code not in existing_codes]
+        if missing:
+            dept_admin_role.permissions.extend(missing)
+            logger.info("Added %d new permissions to existing dept_admin role", len(missing))
 
     # Seed default portal content (skip if already exists)
     existing_company = await db.execute(select(Setting).where(Setting.key == "company_info"))
@@ -195,7 +223,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             definition={
                 "nodes": [
                     {"id": "start", "type": "start", "label": "Submit"},
-                    {"id": "admin_approve", "type": "task", "label": "Admin Approval", "assignee_type": "role", "assignee_value": "admin"},
+                    {"id": "admin_approve", "type": "task", "label": "Admin Approval", "assignee_type": "role", "assignee_value": "super_admin"},
                     {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
                     {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
                 ],
@@ -207,6 +235,52 @@ async def seed_initial_data(db: AsyncSession) -> None:
             },
         ))
         logger.info("Seeded leave approval workflow definition")
+
+    # Seed expense approval workflow definition
+    existing_wf_expense = await db.execute(select(WorkflowDef).where(WorkflowDef.name == "Expense Approval"))
+    if not existing_wf_expense.scalar_one_or_none():
+        db.add(WorkflowDef(
+            name="Expense Approval",
+            description="Expense reimbursement approval: submit → admin review",
+            icon="receipt",
+            definition={
+                "nodes": [
+                    {"id": "start", "type": "start", "label": "Submit"},
+                    {"id": "admin_approve", "type": "task", "label": "Admin Approval", "assignee_type": "role", "assignee_value": "super_admin"},
+                    {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
+                    {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
+                ],
+                "transitions": [
+                    {"from": "start", "action": "submit", "to": "admin_approve"},
+                    {"from": "admin_approve", "action": "approve", "to": "end_approved"},
+                    {"from": "admin_approve", "action": "reject", "to": "end_rejected"},
+                ],
+            },
+        ))
+        logger.info("Seeded expense approval workflow definition")
+
+    # Seed overtime approval workflow definition
+    existing_wf_overtime = await db.execute(select(WorkflowDef).where(WorkflowDef.name == "Overtime Approval"))
+    if not existing_wf_overtime.scalar_one_or_none():
+        db.add(WorkflowDef(
+            name="Overtime Approval",
+            description="Overtime request approval: submit → admin review",
+            icon="clock",
+            definition={
+                "nodes": [
+                    {"id": "start", "type": "start", "label": "Submit"},
+                    {"id": "admin_approve", "type": "task", "label": "Admin Approval", "assignee_type": "role", "assignee_value": "super_admin"},
+                    {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
+                    {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
+                ],
+                "transitions": [
+                    {"from": "start", "action": "submit", "to": "admin_approve"},
+                    {"from": "admin_approve", "action": "approve", "to": "end_approved"},
+                    {"from": "admin_approve", "action": "reject", "to": "end_rejected"},
+                ],
+            },
+        ))
+        logger.info("Seeded overtime approval workflow definition")
 
     # Seed asset categories
     existing_cat = await db.execute(select(AssetCategory).limit(1))

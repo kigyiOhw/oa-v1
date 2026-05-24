@@ -1,43 +1,76 @@
 import { create } from 'zustand'
+import { notificationApi, type NotificationItem } from '../api/notification'
 
-export interface Notification {
-  id: string
-  type: string
-  title: string
-  message: string
-  instance_id?: number
-  task_id?: number
-  created_at: string
-  read: boolean
-}
+export type { NotificationItem as Notification }
 
 interface NotificationState {
-  notifications: Notification[]
+  notifications: NotificationItem[]
   unreadCount: number
-  addNotification: (n: Omit<Notification, 'id' | 'read'>) => void
-  markAllRead: () => void
-  clearAll: () => void
+  total: number
+  loading: boolean
+  fetchUnreadCount: () => Promise<void>
+  fetchNotifications: (page?: number, pageSize?: number, unreadOnly?: boolean) => Promise<number>
+  markRead: (id: number) => Promise<void>
+  markAllRead: () => Promise<void>
+  addNotification: (n: NotificationItem) => void
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
+  total: 0,
+  loading: false,
 
-  addNotification: (n) =>
-    set((state) => {
-      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-      const notification: Notification = { ...n, id, read: false }
-      return {
-        notifications: [notification, ...state.notifications].slice(0, 50),
-        unreadCount: state.unreadCount + 1,
-      }
-    }),
+  fetchUnreadCount: async () => {
+    try {
+      const res = await notificationApi.unreadCount()
+      set({ unreadCount: res.data.count })
+    } catch {
+      // silent
+    }
+  },
 
-  markAllRead: () =>
+  fetchNotifications: async (page = 1, pageSize = 20, unreadOnly = false) => {
+    set({ loading: true })
+    try {
+      const res = await notificationApi.list({ page, page_size: pageSize, unread_only: unreadOnly })
+      set({ notifications: res.data.items, total: res.data.total })
+      return res.data.total
+    } finally {
+      set({ loading: false })
+    }
+  },
+
+  markRead: async (id: number) => {
+    try {
+      await notificationApi.markRead(id)
+      set((state) => ({
+        notifications: state.notifications.map((n) =>
+          n.id === id ? { ...n, is_read: true } : n
+        ),
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      }))
+    } catch {
+      // silent
+    }
+  },
+
+  markAllRead: async () => {
+    try {
+      await notificationApi.markAllRead()
+      set((state) => ({
+        notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
+        unreadCount: 0,
+      }))
+    } catch {
+      // silent
+    }
+  },
+
+  addNotification: (n: NotificationItem) => {
     set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-      unreadCount: 0,
-    })),
-
-  clearAll: () => set({ notifications: [], unreadCount: 0 }),
+      notifications: [n, ...state.notifications].slice(0, 50),
+      unreadCount: state.unreadCount + 1,
+    }))
+  },
 }))

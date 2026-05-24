@@ -26,7 +26,9 @@ class RoleRepository:
         return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str) -> Role | None:
-        result = await self.session.execute(select(Role).where(Role.name == name))
+        result = await self.session.execute(
+            select(Role).options(selectinload(Role.users)).where(Role.name == name)
+        )
         return result.scalar_one_or_none()
 
     async def create(self, role: Role) -> Role:

@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './components/AdminLayout'
 import PermissionGuard from './components/PermissionGuard'
 import ThemeSwitcher from './components/ThemeSwitcher'
+import NotificationBell from './components/NotificationBell'
 import { useThemeStore } from './stores/theme'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -37,6 +38,15 @@ import AssetDetail from './pages/admin/AssetDetail'
 import AssetCategories from './pages/admin/AssetCategories'
 import Consumables from './pages/admin/Consumables'
 import ConsumableDetail from './pages/admin/ConsumableDetail'
+import NotificationsPage from './pages/notifications/NotificationsPage'
+import ContactsPage from './pages/contacts/ContactsPage'
+import MyExpenses from './pages/expenses/MyExpenses'
+import ExpenseCreate from './pages/expenses/ExpenseCreate'
+import ExpenseDetail from './pages/expenses/ExpenseDetail'
+import MyOvertimes from './pages/overtimes/MyOvertimes'
+import OvertimeCreate from './pages/overtimes/OvertimeCreate'
+import OvertimeDetail from './pages/overtimes/OvertimeDetail'
+import AuditLogs from './pages/admin/AuditLogs'
 
 function App() {
   const { mode, color, gradient, imageUrl } = useThemeStore()
@@ -221,6 +231,14 @@ function App() {
                 </PermissionGuard>
               }
             />
+            <Route
+              path="audit-logs"
+              element={
+                <PermissionGuard permission="audit:read">
+                  <AuditLogs />
+                </PermissionGuard>
+              }
+            />
           </Route>
 
           <Route path="/workflow/my" element={<ProtectedRoute><MyInstances /></ProtectedRoute>} />
@@ -240,9 +258,23 @@ function App() {
           <Route path="/attendance/team" element={<ProtectedRoute><TeamAttendance /></ProtectedRoute>} />
           <Route path="/attendance/team/:userId" element={<ProtectedRoute><SubordinateDetail /></ProtectedRoute>} />
 
+          <Route path="/expenses" element={<ProtectedRoute><MyExpenses /></ProtectedRoute>} />
+          <Route path="/expenses/new" element={<ProtectedRoute><ExpenseCreate /></ProtectedRoute>} />
+          <Route path="/expenses/:id" element={<ProtectedRoute><ExpenseDetail /></ProtectedRoute>} />
+          <Route path="/expenses/:id/edit" element={<ProtectedRoute><ExpenseCreate /></ProtectedRoute>} />
+
+          <Route path="/overtimes" element={<ProtectedRoute><MyOvertimes /></ProtectedRoute>} />
+          <Route path="/overtimes/new" element={<ProtectedRoute><OvertimeCreate /></ProtectedRoute>} />
+          <Route path="/overtimes/:id" element={<ProtectedRoute><OvertimeDetail /></ProtectedRoute>} />
+          <Route path="/overtimes/:id/edit" element={<ProtectedRoute><OvertimeCreate /></ProtectedRoute>} />
+
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ThemeSwitcher />
+        <NotificationBell />
       </div>
     </ErrorBoundary>
   )

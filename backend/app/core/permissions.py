@@ -83,6 +83,15 @@ class Permissions(StrEnum):
     ATTENDANCE_READ = "attendance:read"
     ATTENDANCE_SUBORDINATES_READ = "attendance:subordinates:read"
     ATTENDANCE_UPDATE = "attendance:update"
+    NOTIFICATION_READ = "notification:read"
+    CONTACTS_READ = "contacts:read"
+    EXPENSE_CREATE = "expense:create"
+    EXPENSE_READ = "expense:read"
+    EXPENSE_DELETE = "expense:delete"
+    OVERTIME_CREATE = "overtime:create"
+    OVERTIME_READ = "overtime:read"
+    OVERTIME_DELETE = "overtime:delete"
+    AUDIT_READ = "audit:read"
 
 
 ALL_PERMISSIONS: list[str] = [p.value for p in Permissions]

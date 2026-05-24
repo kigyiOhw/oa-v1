@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
@@ -8,6 +9,7 @@ from app.models.announcement import Announcement
 from app.models.user import User
 from app.repositories.announcement import AnnouncementRepository
 from app.schemas.announcement import AnnouncementCreate, AnnouncementUpdate
+from app.services.notification import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +52,28 @@ class AnnouncementService:
         if data.is_pinned is not None:
             ann.is_pinned = data.is_pinned
         if data.is_published is not None:
+            was_new_publish = data.is_published and not ann.published_at
             if data.is_published and not ann.published_at:
                 ann.published_at = datetime.now(timezone.utc)
             ann.is_published = data.is_published
         ann = await self.repo.update(ann)
         logger.info("Announcement updated | id=%d", ann.id)
+
+        if data.is_published is not None and was_new_publish:
+            users = (await self.session.execute(
+                select(User).where(User.is_active == True)
+            )).scalars().all()
+            for u in users:
+                if u.id != ann.author_id:
+                    await NotificationService.send_notification(
+                        self.session,
+                        user_id=u.id,
+                        type_="announcement",
+                        title="New Announcement",
+                        message=ann.title,
+                        reference_type="announcement",
+                        reference_id=ann.id,
+                    )
         return ann
 
     async def delete(self, ann_id: int) -> None:

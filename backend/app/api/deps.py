@@ -1,11 +1,12 @@
 import logging
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit import set_audit_context
 from app.core.exceptions import OAException
 from app.core.permissions import is_super_admin
 from app.db.base import AsyncSessionLocal
@@ -21,6 +22,10 @@ async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
 
@@ -29,6 +34,7 @@ DBDep = Annotated[AsyncSession, Depends(get_db)]
 
 
 async def get_current_user(
+    request: Request,
     token: Annotated[str, Depends(oauth2_scheme)],
     db: DBDep,
 ) -> User:
@@ -66,6 +72,9 @@ async def get_current_user(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    client_ip = request.client.host if request.client else "unknown"
+    set_audit_context(user_id=user.id, ip=client_ip)
 
     logger.debug("Auth success | user_id=%s username=%s", user.id, user.username)
     return user
