@@ -72,6 +72,27 @@ class UserRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total
 
+    async def get_subordinates(self, manager_id: int) -> list[User]:
+        """Get active subordinates for a manager. Eager-loads department."""
+        result = await self.session.execute(
+            select(User)
+            .options(selectinload(User.department))
+            .where(User.manager_id == manager_id, User.is_active)
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id_with_profile(self, user_id: int) -> User | None:
+        """Get user with employee_profile and department eagerly loaded."""
+        result = await self.session.execute(
+            select(User)
+            .options(
+                selectinload(User.employee_profile),
+                selectinload(User.department),
+            )
+            .where(User.id == user_id)
+        )
+        return result.scalar_one_or_none()
+
     async def update(self, user: User) -> User:
         await self.session.flush()
         await self.session.refresh(user)

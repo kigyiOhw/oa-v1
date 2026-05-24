@@ -25,6 +25,10 @@ import LeaveCreate from './pages/leaves/LeaveCreate'
 import LeaveDetail from './pages/leaves/LeaveDetail'
 import MyProfile from './pages/employee/MyProfile'
 import MyAssets from './pages/employee/MyAssets'
+import MyAttendance from './pages/attendance/MyAttendance'
+import TeamAttendance from './pages/attendance/TeamAttendance'
+import SubordinateDetail from './pages/attendance/SubordinateDetail'
+import AttendanceConfigPage from './pages/attendance/AttendanceConfig'
 import Employees from './pages/admin/Employees'
 import EmployeeDetail from './pages/admin/EmployeeDetail'
 import Assets from './pages/admin/Assets'
@@ -209,6 +213,14 @@ function App() {
                 </PermissionGuard>
               }
             />
+            <Route
+              path="attendance-config"
+              element={
+                <PermissionGuard permission="attendance:update">
+                  <AttendanceConfigPage />
+                </PermissionGuard>
+              }
+            />
           </Route>
 
           <Route path="/workflow/my" element={<ProtectedRoute><MyInstances /></ProtectedRoute>} />
@@ -223,6 +235,10 @@ function App() {
           <Route path="/leaves/new" element={<ProtectedRoute><LeaveCreate /></ProtectedRoute>} />
           <Route path="/leaves/:id" element={<ProtectedRoute><LeaveDetail /></ProtectedRoute>} />
           <Route path="/leaves/:id/edit" element={<ProtectedRoute><LeaveCreate /></ProtectedRoute>} />
+
+          <Route path="/attendance" element={<ProtectedRoute><MyAttendance /></ProtectedRoute>} />
+          <Route path="/attendance/team" element={<ProtectedRoute><TeamAttendance /></ProtectedRoute>} />
+          <Route path="/attendance/team/:userId" element={<ProtectedRoute><SubordinateDetail /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

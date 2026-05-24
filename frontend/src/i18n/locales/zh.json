@@ -29,6 +29,7 @@
     "total": "共",
     "page": "页",
     "backToHome": "← 返回首页",
+    "backToAdmin": "← 返回管理",
     "saveSuccess": "已保存",
     "saveFailed": "保存失败",
     "requiredFields": "请填写所有必填项"
@@ -63,7 +64,8 @@
       "approval": "审批",
       "notification": "通知",
       "contacts": "通讯录",
-      "myTasks": "我的待办"
+      "myTasks": "我的待办",
+      "attendance": "考勤"
     },
     "sections": {
       "companyStyle": "公司风采",
@@ -352,6 +354,28 @@
     },
     "noAssets": "暂无资产",
     "deleteConfirm": "确定删除此资产？"
+  },
+  "attendance": {
+    "config": "考勤配置",
+    "myAttendance": "我的考勤",
+    "teamAttendance": "团队考勤",
+    "checkIn": "签到",
+    "checkOut": "签退",
+    "normalDays": "正常",
+    "lateDays": "迟到",
+    "earlyDays": "早退",
+    "absentDays": "旷工",
+    "leaveDays": "请假",
+    "businessTripDays": "出差",
+    "year": "年",
+    "month": "月",
+    "records": "考勤记录",
+    "recentLeaves": "近期请假",
+    "profile": "个人信息",
+    "workStartTime": "上班时间",
+    "workEndTime": "下班时间",
+    "lateTolerance": "迟到容忍度（分钟）",
+    "enableMandatory": "启用强制打卡"
   },
   "consumable": {
     "title": "耗材管理",

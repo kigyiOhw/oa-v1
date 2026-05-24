@@ -29,6 +29,7 @@
     "total": "Total",
     "page": "Page",
     "backToHome": "← Back to Home",
+    "backToAdmin": "← Back to Admin",
     "saveSuccess": "Saved",
     "saveFailed": "Save failed",
     "requiredFields": "Please fill in all required fields"
@@ -63,7 +64,8 @@
       "approval": "Approval",
       "notification": "Notices",
       "contacts": "Contacts",
-      "myTasks": "My Tasks"
+      "myTasks": "My Tasks",
+      "attendance": "Attendance"
     },
     "sections": {
       "companyStyle": "Company Gallery",
@@ -352,6 +354,28 @@
     },
     "noAssets": "No assets",
     "deleteConfirm": "Delete this asset?"
+  },
+  "attendance": {
+    "config": "Attendance Config",
+    "myAttendance": "My Attendance",
+    "teamAttendance": "Team Attendance",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "normalDays": "Normal",
+    "lateDays": "Late",
+    "earlyDays": "Early",
+    "absentDays": "Absent",
+    "leaveDays": "Leave",
+    "businessTripDays": "Trip",
+    "year": "Year",
+    "month": "Month",
+    "records": "Records",
+    "recentLeaves": "Recent Leave Requests",
+    "profile": "Profile",
+    "workStartTime": "Work Start Time",
+    "workEndTime": "Work End Time",
+    "lateTolerance": "Late Tolerance (minutes)",
+    "enableMandatory": "Enable mandatory check-in"
   },
   "consumable": {
     "title": "Consumable Management",

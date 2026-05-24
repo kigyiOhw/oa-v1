@@ -1,5 +1,6 @@
 import logging
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
@@ -207,6 +208,19 @@ class WorkflowEngineService:
                         instance.id, outcome)
             instance.status = outcome
             instance.current_node_id = next_node["id"]
+
+            # If this is a Leave Approval workflow, sync leave status + attendance
+            if instance.workflow_def.name == "Leave Approval":
+                from app.models.leave_request import LeaveRequest
+                leave = (await self.session.execute(
+                    select(LeaveRequest).where(
+                        LeaveRequest.workflow_instance_id == instance.id
+                    )
+                )).scalar_one_or_none()
+                if leave:
+                    from app.services.leave import LeaveService
+                    leave_svc = LeaveService(self.session)
+                    await leave_svc.sync_status(leave)
         else:
             logger.info("----------WorkflowEngineService.process_task, resolving_next_assignee, node=%s, assignee_type=%s",
                         next_node["id"], next_node.get("assignee_type"))

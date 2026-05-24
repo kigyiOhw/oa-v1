@@ -23,6 +23,7 @@ export default function Dashboard() {
     { label: t('dashboard.shortcuts.notification'), icon: '🔔', to: '/workflow/tasks', requiresAuth: true },
     { label: t('dashboard.shortcuts.contacts'), icon: '👥', to: '/admin/users', requiresAuth: true },
     { label: t('dashboard.shortcuts.myTasks'), icon: '📋', to: '/workflow/tasks', requiresAuth: true },
+    { label: t('dashboard.shortcuts.attendance'), icon: '🕐', to: '/attendance', requiresAuth: true },
     { label: t('asset.myAssets'), icon: '💻', to: '/my-assets', requiresAuth: true },
   ]
 

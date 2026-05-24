@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Enterprise OA (Office Automation) system centered around configurable approval workflows. Currently in **Phase 9** (attendance): auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, and attendance with check-in/out + team view are all implemented.
+Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-9 complete: auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, attendance with check-in/out + team view. Next: **Phase 10** (notifications + contacts).
 
 ## Common Commands
 

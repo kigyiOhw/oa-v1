@@ -81,6 +81,10 @@ async def seed_initial_data(db: AsyncSession) -> None:
                 "consumable:read": "View consumables",
                 "consumable:update": "Edit consumables / stock in / out",
                 "consumable:delete": "Delete consumables",
+                "attendance:check-in": "Check in and out",
+                "attendance:read": "View own attendance",
+                "attendance:subordinates:read": "View subordinates attendance",
+                "attendance:update": "Manage attendance config",
             }.get(code, "")
             new_perms.append(Permission(code=code, description=desc))
 
@@ -110,7 +114,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
     user_role = (await db.execute(select(Role).where(Role.name == "user"))).scalar_one_or_none()
     if not user_role:
-        user_codes = {"user:read", "role:read", "permission:read", "dept:read", "announcement:read", "media:read", "leave:read", "leave:create", "leave:delete", "employee:read", "employee:update", "asset:read", "consumable:read"}
+        user_codes = {"user:read", "role:read", "permission:read", "dept:read", "announcement:read", "media:read", "leave:read", "leave:create", "leave:delete", "employee:read", "employee:update", "asset:read", "consumable:read", "attendance:check-in", "attendance:read"}
         user_perms = [p for p in all_perms if p.code in user_codes]
         user_role = Role(name="user", description="普通用户", role_type="user")
         user_role.permissions = user_perms
@@ -126,7 +130,8 @@ async def seed_initial_data(db: AsyncSession) -> None:
     dept_admin_role = (await db.execute(select(Role).where(Role.name == "dept_admin"))).scalar_one_or_none()
     if not dept_admin_role:
         dept_codes = {"employee:read", "employee:update", "asset:read", "asset:update", "consumable:read", "consumable:update",
-                       "dept:read", "user:read", "leave:read", "announcement:read", "media:read", "media:upload"}
+                       "dept:read", "user:read", "leave:read", "announcement:read", "media:read", "media:upload",
+                       "attendance:check-in", "attendance:read", "attendance:subordinates:read"}
         dept_perms = [p for p in all_perms if p.code in dept_codes]
         dept_admin_role = Role(name="dept_admin", description="部门管理员", role_type="dept_admin", admin_scope="department")
         dept_admin_role.permissions = dept_perms
@@ -144,6 +149,16 @@ async def seed_initial_data(db: AsyncSession) -> None:
     if not existing_links.scalar_one_or_none():
         db.add(Setting(key="quick_links", value=DEFAULT_QUICK_LINKS))
         logger.info("Seeded default quick links")
+
+    existing_att_config = await db.execute(select(Setting).where(Setting.key == "attendance_config"))
+    if not existing_att_config.scalar_one_or_none():
+        db.add(Setting(key="attendance_config", value=json.dumps({
+            "work_start_time": "09:00",
+            "work_end_time": "18:00",
+            "late_tolerance_minutes": 0,
+            "enable_mandatory_check_in": False,
+        })))
+        logger.info("Seeded default attendance config")
 
     existing_ann = await db.execute(select(Announcement).limit(1))
     if not existing_ann.scalar_one_or_none():

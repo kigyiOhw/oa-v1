@@ -195,8 +195,18 @@ class LeaveService:
         instance_repo = WorkflowInstanceRepository(self.session)
         instance = await instance_repo.get_by_id(leave.workflow_instance_id)
         if instance and instance.status in ("approved", "rejected", "cancelled"):
+            old_status = leave.status
             logger.info("----------LeaveService.sync_status, syncing, leave_id=%s, from=%s, to=%s",
-                        leave.id, leave.status, instance.status)
+                        leave.id, old_status, instance.status)
             leave.status = instance.status
             await self.repo.update(leave)
+
+            # sync attendance records for leave date range
+            from app.services.attendance import AttendanceService
+            attendance_svc = AttendanceService(self.session)
+            if instance.status == "approved":
+                await attendance_svc.sync_leave_record(leave, approved=True)
+            elif old_status == "approved" and instance.status in ("rejected", "cancelled"):
+                await attendance_svc.sync_leave_record(leave, approved=False)
+
         return leave

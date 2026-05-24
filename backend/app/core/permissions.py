@@ -79,6 +79,10 @@ class Permissions(StrEnum):
     CONSUMABLE_READ = "consumable:read"
     CONSUMABLE_UPDATE = "consumable:update"
     CONSUMABLE_DELETE = "consumable:delete"
+    ATTENDANCE_CHECK_IN = "attendance:check-in"
+    ATTENDANCE_READ = "attendance:read"
+    ATTENDANCE_SUBORDINATES_READ = "attendance:subordinates:read"
+    ATTENDANCE_UPDATE = "attendance:update"
 
 
 ALL_PERMISSIONS: list[str] = [p.value for p in Permissions]
