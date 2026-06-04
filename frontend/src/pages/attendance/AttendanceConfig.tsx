@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { attendanceApi, AttendanceConfig } from '../../api/attendance'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function AttendanceConfigPage() {
   const { t } = useTranslation()
@@ -52,21 +54,21 @@ export default function AttendanceConfigPage() {
       <div className="bg-white rounded-lg shadow p-6 space-y-5">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('attendance.workStartTime')}</label>
-          <input
+          <Input
             type="time"
             value={config.work_start_time}
             onChange={(e) => setConfig({ ...config, work_start_time: e.target.value })}
-            className="border rounded px-3 py-2 text-sm w-48"
+            className="w-48"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('attendance.workEndTime')}</label>
-          <input
+          <Input
             type="time"
             value={config.work_end_time}
             onChange={(e) => setConfig({ ...config, work_end_time: e.target.value })}
-            className="border rounded px-3 py-2 text-sm w-48"
+            className="w-48"
           />
         </div>
 
@@ -99,13 +101,9 @@ export default function AttendanceConfigPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
+          </Button>
           {message && (
             <span className={`text-sm ${message.includes('fail') ? 'text-red-600' : 'text-green-600'}`}>
               {message}

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { assetApi, type AssetDetail as AssetDetailType, assetStatusLabel, assetStatusColor } from '../../api/assets'
 import { userApi, type UserItem } from '../../api/users'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
 
 export default function AssetDetail() {
   const { t } = useTranslation()
@@ -66,9 +70,9 @@ export default function AssetDetail() {
 
   return (
     <div>
-      <button onClick={() => navigate('/admin/assets')} className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-        &larr; {t('asset.title')}
-      </button>
+      <Button variant="link" size="sm" className="h-auto p-0 mb-4" onClick={() => navigate('/admin/assets')}>
+        <ArrowLeft size={14} className="inline" /> {t('asset.title')}
+      </Button>
       <h1 className="text-2xl font-bold mb-6">{asset.name} — {t('asset.editAsset')}</h1>
 
       {error && <div className="mb-4 rounded bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
@@ -125,21 +129,18 @@ export default function AssetDetail() {
         </section>
 
         <div className="flex gap-2 pt-2 border-t">
-          <button onClick={() => navigate(`/admin/assets/${asset.id}/edit`)}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <Button onClick={() => navigate(`/admin/assets/${asset.id}/edit`)}>
             {t('common.edit')}
-          </button>
+          </Button>
           {!asset.current_user_id && (
-            <button onClick={openAssign}
-              className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            <Button variant="success" onClick={openAssign}>
               {t('asset.assign')}
-            </button>
+            </Button>
           )}
           {asset.current_user_id && (
-            <button onClick={handleReturn} disabled={saving}
-              className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+            <Button variant="warning" onClick={handleReturn} disabled={saving}>
               {t('asset.return')}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -149,33 +150,33 @@ export default function AssetDetail() {
           {assignments.length === 0 ? (
             <p className="text-sm text-gray-400">{t('common.noData')}</p>
           ) : (
-            <table className="w-full text-sm border">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-                  <th className="px-3 py-2 text-left">{t('asset.currentUser')}</th>
-                  <th className="px-3 py-2 text-left">{t('leave.dates')}</th>
-                  <th className="px-3 py-2 text-left">{t('asset.description')}</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('common.actions')}</TableHead>
+                  <TableHead>{t('asset.currentUser')}</TableHead>
+                  <TableHead>{t('leave.dates')}</TableHead>
+                  <TableHead>{t('asset.description')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {assignments.map((r) => {
                   const u = r.user as Record<string, unknown> | null
                   return (
-                    <tr key={r.id} className="border-t">
-                      <td className="px-3 py-2">
+                    <TableRow key={r.id}>
+                      <TableCell>
                         <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${r.action === 'assign' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                           {r.action === 'assign' ? t('asset.assign') : t('asset.return')}
                         </span>
-                      </td>
-                      <td className="px-3 py-2">{u ? String(u.full_name || u.username || '') : '-'}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{r.action_date}</td>
-                      <td className="px-3 py-2 text-gray-500">{r.notes || '-'}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{u ? String(u.full_name || u.username || '') : '-'}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{r.action_date}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.notes || '-'}</TableCell>
+                    </TableRow>
                   )
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </section>
       </div>
@@ -187,26 +188,23 @@ export default function AssetDetail() {
             <h2 className="text-lg font-bold mb-4">{t('asset.assignUser')}</h2>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.selectUser')}</label>
-              <select
+              <Select
                 value={userId ?? ''}
                 onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">-- {t('asset.selectUser')} --</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>{u.full_name || u.username} ({u.username})</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={handleAssign} disabled={saving || !userId}
-                className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              <Button onClick={handleAssign} disabled={saving || !userId} className="flex-1">
                 {saving ? t('common.saving') : t('common.save')}
-              </button>
-              <button onClick={() => setAssignOpen(false)}
-                className="flex-1 rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">
+              </Button>
+              <Button variant="outline" onClick={() => setAssignOpen(false)} className="flex-1">
                 {t('common.cancel')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

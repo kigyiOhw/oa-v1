@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { auditApi, AuditLogItem } from '../../api/audit'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 
 const ACTIONS = ['', 'create', 'update', 'delete']
 const RESOURCE_TYPES = [
@@ -11,6 +16,15 @@ const RESOURCE_TYPES = [
   'LeaveRequest', 'ExpenseRequest', 'OvertimeRequest',
   'WorkflowInstance', 'WorkflowTask',
 ]
+
+const actionBadgeVariant = (a: string): 'success' | 'destructive' | 'default' => {
+  const map: Record<string, 'success' | 'destructive' | 'default'> = {
+    create: 'success',
+    update: 'default',
+    delete: 'destructive',
+  }
+  return map[a] || 'default'
+}
 
 export default function AuditLogs() {
   const { t } = useTranslation()
@@ -55,19 +69,6 @@ export default function AuditLogs() {
 
   const totalPages = Math.ceil(total / pageSize)
 
-  const actionBadge = (a: string) => {
-    const colors: Record<string, string> = {
-      create: 'bg-green-100 text-green-700',
-      update: 'bg-blue-100 text-blue-700',
-      delete: 'bg-red-100 text-red-700',
-    }
-    return (
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[a] || 'bg-gray-100'}`}>
-        {a}
-      </span>
-    )
-  }
-
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">{t('auditLogs.title')}</h1>
@@ -75,116 +76,110 @@ export default function AuditLogs() {
       <div className="flex flex-wrap gap-3 mb-4 items-end">
         <div>
           <label className="block text-xs text-gray-500 mb-1">{t('auditLogs.action')}</label>
-          <select
+          <Select
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            className="border rounded px-2 py-1.5 text-sm"
           >
             {ACTIONS.map((a) => (
               <option key={a} value={a}>{a || t('common.all')}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">{t('auditLogs.resourceType')}</label>
-          <select
+          <Select
             value={resourceType}
             onChange={(e) => setResourceType(e.target.value)}
-            className="border rounded px-2 py-1.5 text-sm"
           >
             {RESOURCE_TYPES.map((r) => (
               <option key={r} value={r}>{r || t('common.all')}</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">{t('auditLogs.startDate')}</label>
-          <input
+          <Input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="border rounded px-2 py-1.5 text-sm"
           />
         </div>
         <div>
           <label className="block text-xs text-gray-500 mb-1">{t('auditLogs.endDate')}</label>
-          <input
+          <Input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="border rounded px-2 py-1.5 text-sm"
           />
         </div>
-        <button
-          onClick={handleFilter}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-        >
+        <Button onClick={handleFilter}>
           {t('common.search')}
-        </button>
-        <button
-          onClick={handleReset}
-          className="px-3 py-1.5 border rounded text-sm hover:bg-gray-50"
-        >
+        </Button>
+        <Button variant="outline" onClick={handleReset}>
           {t('common.reset')}
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm border">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left">{t('auditLogs.time')}</th>
-              <th className="px-3 py-2 text-left">{t('auditLogs.operator')}</th>
-              <th className="px-3 py-2 text-left">{t('auditLogs.action')}</th>
-              <th className="px-3 py-2 text-left">{t('auditLogs.resourceType')}</th>
-              <th className="px-3 py-2 text-left">{t('auditLogs.resourceId')}</th>
-              <th className="px-3 py-2 text-left">IP</th>
-              <th className="px-3 py-2 text-left">{t('auditLogs.details')}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('auditLogs.time')}</TableHead>
+              <TableHead>{t('auditLogs.operator')}</TableHead>
+              <TableHead>{t('auditLogs.action')}</TableHead>
+              <TableHead>{t('auditLogs.resourceType')}</TableHead>
+              <TableHead>{t('auditLogs.resourceId')}</TableHead>
+              <TableHead>IP</TableHead>
+              <TableHead>{t('auditLogs.details')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {items.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-gray-400">{t('common.noData')}</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-gray-400 py-6">{t('common.noData')}</TableCell>
+              </TableRow>
             )}
             {items.map((item) => (
               <>
-                <tr key={item.id} className="border-t hover:bg-gray-50">
-                  <td className="px-3 py-2 whitespace-nowrap text-gray-500 text-xs">
+                <TableRow key={item.id}>
+                  <TableCell className="whitespace-nowrap text-gray-500 text-xs">
                     {new Date(item.created_at).toLocaleString()}
-                  </td>
-                  <td className="px-3 py-2">{item.user_name || '-'}</td>
-                  <td className="px-3 py-2">{actionBadge(item.action)}</td>
-                  <td className="px-3 py-2 text-xs">{item.resource_type}</td>
-                  <td className="px-3 py-2 text-xs">{item.resource_id ?? '-'}</td>
-                  <td className="px-3 py-2 text-xs text-gray-400">{item.ip_address}</td>
-                  <td className="px-3 py-2">
+                  </TableCell>
+                  <TableCell>{item.user_name || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={actionBadgeVariant(item.action)}>{item.action}</Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">{item.resource_type}</TableCell>
+                  <TableCell className="text-xs">{item.resource_id ?? '-'}</TableCell>
+                  <TableCell className="text-xs text-gray-400">{item.ip_address}</TableCell>
+                  <TableCell>
                     {item.details ? (
-                      <button
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0"
                         onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-                        className="text-blue-600 hover:underline text-xs"
                       >
                         {expandedId === item.id ? t('common.close') : t('common.view')}
-                      </button>
+                      </Button>
                     ) : (
                       <span className="text-gray-300 text-xs">-</span>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
                 {expandedId === item.id && item.details && (
-                  <tr key={`${item.id}-details`}>
-                    <td colSpan={7} className="px-3 py-2 bg-gray-50">
+                  <TableRow key={`${item.id}-details`}>
+                    <TableCell colSpan={7} className="bg-gray-50">
                       <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
                         {JSON.stringify(item.details, null, 2)}
                       </pre>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
               </>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {totalPages > 1 && (
@@ -193,21 +188,23 @@ export default function AuditLogs() {
             {t('common.total')} {total} {t('auditLogs.records')}
           </span>
           <div className="space-x-1">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="px-3 py-1 border rounded text-sm disabled:opacity-30"
             >
               {t('common.prev')}
-            </button>
+            </Button>
             <span className="px-3 py-1 text-sm">{page} / {totalPages}</span>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
-              className="px-3 py-1 border rounded text-sm disabled:opacity-30"
             >
               {t('common.next')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

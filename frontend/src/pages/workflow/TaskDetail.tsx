@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 import { workflowApi, TaskItem, HistoryItem } from '../../api/workflow'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function TaskDetail() {
   const { t } = useTranslation()
@@ -63,12 +66,9 @@ export default function TaskDetail() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="flex gap-4 mb-4">
         <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
-        <button
-          className="text-blue-600 hover:underline text-sm"
-          onClick={() => navigate('/workflow/tasks')}
-        >
-          &larr; {t('workflow.backToMyTasks')}
-        </button>
+        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/workflow/tasks')}>
+          <ArrowLeft size={14} className="inline" /> {t('workflow.backToMyTasks')}
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border p-6 mb-6">
@@ -83,28 +83,20 @@ export default function TaskDetail() {
       {task.status === 'pending' && (
         <div className="bg-white rounded-lg border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-3">{t('workflow.process')}</h2>
-          <textarea
-            className="block w-full border rounded px-3 py-2 text-sm mb-3"
+          <Textarea
+            className="mb-3"
             rows={3}
             placeholder={t('workflow.comment')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
           <div className="flex gap-3">
-            <button
-              className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
-              disabled={processing}
-              onClick={() => handleAction('approve')}
-            >
+            <Button variant="success" disabled={processing} onClick={() => handleAction('approve')}>
               {processing ? t('common.processing') : t('workflow.approve')}
-            </button>
-            <button
-              className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
-              disabled={processing}
-              onClick={() => handleAction('reject')}
-            >
+            </Button>
+            <Button variant="destructive" disabled={processing} onClick={() => handleAction('reject')}>
               {processing ? t('common.processing') : t('workflow.reject')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

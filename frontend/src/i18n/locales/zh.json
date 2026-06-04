@@ -75,7 +75,24 @@
       "myItems": "我的事项",
       "myTasks": "我的待办",
       "myProcessed": "我已办",
-      "myInitiated": "我发起的"
+      "myInitiated": "我发起的",
+      "orgOverview": "组织概览",
+      "assetOverview": "资产总览",
+      "myAttendance": "我的考勤"
+    },
+    "stats": {
+      "totalUsers": "活跃用户",
+      "totalDepartments": "部门数",
+      "totalAssets": "资产总数",
+      "inUse": "在用",
+      "idle": "闲置",
+      "scrapped": "报废",
+      "workDays": "出勤天数",
+      "lateCount": "迟到",
+      "earlyCount": "早退",
+      "absentCount": "旷工",
+      "leaveDays": "请假天数",
+      "leavesThisMonth": "本月请假"
     },
     "empty": {
       "noImages": "暂无图片 — 管理员可在后台\"媒体管理\"中上传公司活动照片",
@@ -376,7 +393,13 @@
     "workStartTime": "上班时间",
     "workEndTime": "下班时间",
     "lateTolerance": "迟到容忍度（分钟）",
-    "enableMandatory": "启用强制打卡"
+    "enableMandatory": "启用强制打卡",
+    "backToTeam": "返回团队",
+    "noSubordinates": "无下属",
+    "userNotFound": "用户未找到",
+    "today": "今天",
+    "source": "来源",
+    "date": "日期"
   },
   "notification": {
     "title": "通知中心",

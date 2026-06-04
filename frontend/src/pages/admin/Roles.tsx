@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Crown, Settings, Building2, User } from 'lucide-react'
 import { roleApi, RoleItem, RoleTypeItem, PermissionItem } from '../../api/roles'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
-const TYPE_ICONS: Record<string, string> = {
-  super_admin: '👑',
-  module_admin: '⚙️',
-  dept_admin: '🏢',
-  user: '👤',
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  super_admin: <Crown size={16} className="inline" />,
+  module_admin: <Settings size={16} className="inline" />,
+  dept_admin: <Building2 size={16} className="inline" />,
+  user: <User size={16} className="inline" />,
 }
 
 export default function Roles() {
@@ -53,55 +57,46 @@ export default function Roles() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('roles.title')}</h1>
-        <button
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-          onClick={() => setShowCreate(true)}
-        >
+        <Button size="sm" onClick={() => setShowCreate(true)}>
           {t('roles.createRole')}
-        </button>
+        </Button>
       </div>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">{t('roles.name')}</th>
-            <th className="px-3 py-2 text-left">{t('roles.description')}</th>
-            <th className="px-3 py-2 text-left">{t('roles.type')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>{t('roles.name')}</TableHead>
+            <TableHead>{t('roles.description')}</TableHead>
+            <TableHead>{t('roles.type')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {roles.map((r) => (
-            <tr key={r.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{r.id}</td>
-              <td className="px-3 py-2 font-medium">{r.name}</td>
-              <td className="px-3 py-2">{r.description || '-'}</td>
-              <td className="px-3 py-2 text-xs">
+            <TableRow key={r.id}>
+              <TableCell>{r.id}</TableCell>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell>{r.description || '-'}</TableCell>
+              <TableCell className="text-xs">
                 <span className="inline-block bg-gray-100 rounded px-2 py-0.5">
                   {TYPE_ICONS[r.role_type] || ''} {typeLabel(r.role_type)}
                   {r.admin_scope && (
                     <span className="text-gray-400 ml-1">({r.admin_scope})</span>
                   )}
                 </span>
-              </td>
-              <td className="px-3 py-2 space-x-2">
-                <button
-                  className="text-blue-600 hover:underline text-xs"
-                  onClick={() => setEditing(r)}
-                >
+              </TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditing(r)}>
                   {t('roles.permissions')}
-                </button>
-                <button
-                  className="text-red-500 hover:underline text-xs"
-                  onClick={() => handleDelete(r.id)}
-                >
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(r.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {showCreate && (
         <RoleWizardModal
@@ -316,52 +311,33 @@ function RoleWizardModal({
           <div>
             <label className="block mb-3 text-sm">
               {t('roles.name')}
-              <input
-                className="block w-full border rounded px-2 py-1.5 mt-0.5"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. HR Admin"
-                autoFocus
-              />
+              <Input className="mt-0.5" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. HR Admin" autoFocus />
             </label>
             <label className="block text-sm">
               {t('roles.description')}
-              <input
-                className="block w-full border rounded px-2 py-1.5 mt-0.5"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
-              />
+              <Input className="mt-0.5" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" />
             </label>
           </div>
         )}
 
         <div className="flex gap-2 mt-6">
           {step > 0 && (
-            <button className="border rounded py-1.5 px-4 text-sm" onClick={() => setStep((s) => s - 1)}>
+            <Button variant="outline" onClick={() => setStep((s) => s - 1)}>
               {t('common.back')}
-            </button>
+            </Button>
           )}
           {step < 2 ? (
-            <button
-              className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canNext()}
-            >
+            <Button className="flex-1" onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
               {t('common.next') || 'Next'}
-            </button>
+            </Button>
           ) : (
-            <button
-              className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-              onClick={handleSave}
-              disabled={saving || !name.trim()}
-            >
+            <Button className="flex-1" onClick={handleSave} disabled={saving || !name.trim()}>
               {saving ? t('common.saving') : t('common.create')}
-            </button>
+            </Button>
           )}
-          <button className="border rounded py-1.5 px-4 text-sm" onClick={onClose}>
+          <Button variant="outline" onClick={onClose}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -428,15 +404,12 @@ function PermissionModal({
           </div>
         ))}
         <div className="flex gap-2 mt-4">
-          <button
-            className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm"
-            onClick={handleSave}
-          >
+          <Button className="flex-1" onClick={handleSave}>
             {t('common.save')}
-          </button>
-          <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 import { workflowApi, InstanceItem, HistoryItem } from '../../api/workflow'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 export default function InstanceDetail() {
   const { t } = useTranslation()
@@ -56,12 +59,9 @@ export default function InstanceDetail() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="flex gap-4 mb-4">
         <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
-        <button
-          className="text-blue-600 hover:underline text-sm"
-          onClick={() => navigate('/workflow/my')}
-        >
-          &larr; {t('workflow.backToMyInstances')}
-        </button>
+        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/workflow/my')}>
+          <ArrowLeft size={14} className="inline" /> {t('workflow.backToMyInstances')}
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border p-6 mb-6">
@@ -84,36 +84,33 @@ export default function InstanceDetail() {
           </div>
         </div>
         {instance.status === 'pending' && (
-          <button
-            onClick={handleCancel}
-            className="mt-4 px-3 py-1 border border-red-300 text-red-600 rounded text-sm hover:bg-red-50"
-          >
+          <Button variant="outline" size="sm" className="mt-4 border-red-300 text-red-600" onClick={handleCancel}>
             {t('workflow.cancelInstance')}
-          </button>
+          </Button>
         )}
       </div>
 
       {instance.tasks && instance.tasks.length > 0 && (
         <div className="bg-white rounded-lg border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-3">{t('workflow.currentTasks')}</h2>
-          <table className="w-full text-sm border">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-3 py-2 text-left">{t('workflow.node')}</th>
-                <th className="px-3 py-2 text-left">{t('workflow.assignee')}</th>
-                <th className="px-3 py-2 text-left">{t('workflow.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t('workflow.node')}</TableHead>
+                <TableHead>{t('workflow.assignee')}</TableHead>
+                <TableHead>{t('workflow.status')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {instance.tasks.map((t) => (
-                <tr key={t.id} className="border-t">
-                  <td className="px-3 py-2">{nodeLabel(t.node_id)}</td>
-                  <td className="px-3 py-2 text-gray-500">User #{t.assignee_id}</td>
-                  <td className="px-3 py-2">{statusLabel(t.status)}</td>
-                </tr>
+                <TableRow key={t.id}>
+                  <TableCell>{nodeLabel(t.node_id)}</TableCell>
+                  <TableCell className="text-gray-500">User #{t.assignee_id}</TableCell>
+                  <TableCell>{statusLabel(t.status)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

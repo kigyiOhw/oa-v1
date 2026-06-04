@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { consumableApi, type ConsumableItem } from '../../api/consumables'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function Consumables() {
   const { t } = useTranslation()
@@ -37,70 +40,70 @@ export default function Consumables() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('consumable.title')}</h1>
-        <Link to="/admin/consumables/new" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-          + {t('consumable.createConsumable')}
+        <Link to="/admin/consumables/new">
+          <Button size="sm">+ {t('consumable.createConsumable')}</Button>
         </Link>
       </div>
 
       <div className="mb-4">
-        <input
+        <Input
           type="text"
           placeholder={t('common.search') + '...'}
-          className="border rounded px-3 py-1.5 text-sm w-56"
+          className="w-56"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('consumable.consumableName')}</th>
-            <th className="px-3 py-2 text-left">{t('consumable.category')}</th>
-            <th className="px-3 py-2 text-left">{t('consumable.unit')}</th>
-            <th className="px-3 py-2 text-left">{t('consumable.currentStock')}</th>
-            <th className="px-3 py-2 text-left">{t('consumable.safetyStock')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('consumable.consumableName')}</TableHead>
+            <TableHead>{t('consumable.category')}</TableHead>
+            <TableHead>{t('consumable.unit')}</TableHead>
+            <TableHead>{t('consumable.currentStock')}</TableHead>
+            <TableHead>{t('consumable.safetyStock')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {items.map((item) => (
-            <tr key={item.id} className={`border-t hover:bg-gray-50 ${isLowStock(item) ? 'bg-red-50' : ''}`}>
-              <td className="px-3 py-2">
+            <TableRow key={item.id} className={isLowStock(item) ? 'bg-red-50' : ''}>
+              <TableCell>
                 {item.name}
                 {isLowStock(item) && (
                   <span className="ml-2 text-xs text-red-600 font-medium">{t('consumable.lowStock')}</span>
                 )}
-              </td>
-              <td className="px-3 py-2 text-gray-600">{item.category && (item.category as any).name ? (item.category as any).name : '-'}</td>
-              <td className="px-3 py-2">{item.unit}</td>
-              <td className={`px-3 py-2 font-medium ${isLowStock(item) ? 'text-red-600' : ''}`}>{item.current_stock}</td>
-              <td className="px-3 py-2 text-gray-500">{item.safety_stock}</td>
-              <td className="px-3 py-2 space-x-2">
-                <button onClick={() => navigate(`/admin/consumables/${item.id}`)} className="text-blue-600 hover:underline text-xs">
+              </TableCell>
+              <TableCell className="text-muted-foreground">{item.category && (item.category as any).name ? (item.category as any).name : '-'}</TableCell>
+              <TableCell>{item.unit}</TableCell>
+              <TableCell className={`font-medium ${isLowStock(item) ? 'text-red-600' : ''}`}>{item.current_stock}</TableCell>
+              <TableCell className="text-muted-foreground">{item.safety_stock}</TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/admin/consumables/${item.id}`)}>
                   {t('common.view')}
-                </button>
-                <button onClick={() => navigate(`/admin/consumables/${item.id}/edit`)} className="text-blue-600 hover:underline text-xs">
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/admin/consumables/${item.id}/edit`)}>
                   {t('common.edit')}
-                </button>
-                <button onClick={() => handleDelete(item.id)} className="text-red-500 hover:underline text-xs">
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(item.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span>{t('common.total')}: {total}</span>
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-2 py-0.5 border rounded disabled:opacity-30">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
           {t('common.prev')}
-        </button>
+        </Button>
         <span>{t('common.page')} {page}</span>
-        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)} className="px-2 py-0.5 border rounded disabled:opacity-30">
+        <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>
           {t('common.next')}
-        </button>
+        </Button>
       </div>
     </div>
   )

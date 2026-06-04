@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { overtimeApi } from '../../api/overtime'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 function toLocalDatetimeString(iso: string): string {
   if (!iso) return ''
@@ -103,18 +106,16 @@ export default function OvertimeCreate() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t('overtime.startTime')}</label>
-            <input
+            <Input
               type="datetime-local"
-              className="w-full border rounded px-3 py-2 text-sm"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('overtime.endTime')}</label>
-            <input
+            <Input
               type="datetime-local"
-              className="w-full border rounded px-3 py-2 text-sm"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
             />
@@ -123,18 +124,17 @@ export default function OvertimeCreate() {
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('overtime.duration')}</label>
-          <input
+          <Input
             type="text"
-            className="w-full border rounded px-3 py-2 text-sm bg-gray-50"
             value={`${durationHours} hours`}
             readOnly
+            className="bg-gray-50"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('overtime.reason')}</label>
-          <textarea
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Textarea
             rows={4}
             placeholder={t('overtime.reasonPlaceholder')}
             value={reason}
@@ -143,26 +143,15 @@ export default function OvertimeCreate() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
-            className="px-4 py-2 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSaveDraft}
-          >
+          <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>
             {saving ? t('common.saving') : t('overtime.saveDraft')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSubmit}
-          >
+          </Button>
+          <Button disabled={saving} onClick={handleSubmit}>
             {saving ? t('common.processing') : t('overtime.submitApproval')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm text-gray-500 hover:underline"
-            onClick={() => navigate('/overtimes')}
-          >
+          </Button>
+          <Button variant="link" className="h-auto p-0" onClick={() => navigate('/overtimes')}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

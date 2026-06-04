@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { assetApi, type AssetItem, assetStatusLabel, assetStatusColor } from '../../api/assets'
+import { assetApi, type AssetItem, assetStatusLabel } from '../../api/assets'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+
+const assetBadgeVariant = (status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'default' => {
+  const map: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
+    in_use: 'success',
+    idle: 'secondary',
+    scrapped: 'destructive',
+    repairing: 'warning',
+  }
+  return map[status] || 'default'
+}
 
 export default function MyAssets() {
   const { t } = useTranslation()
@@ -28,28 +40,28 @@ export default function MyAssets() {
       {assets.length === 0 ? (
         <div className="text-center text-gray-400 py-8">{t('asset.noAssets')}</div>
       ) : (
-        <table className="w-full text-sm border">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-3 py-2 text-left">{t('asset.assetCode')}</th>
-              <th className="px-3 py-2 text-left">{t('asset.assetName')}</th>
-              <th className="px-3 py-2 text-left">{t('asset.category')}</th>
-              <th className="px-3 py-2 text-left">{t('asset.status')}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('asset.assetCode')}</TableHead>
+              <TableHead>{t('asset.assetName')}</TableHead>
+              <TableHead>{t('asset.category')}</TableHead>
+              <TableHead>{t('asset.status')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {assets.map((a) => (
-              <tr key={a.id} className="border-t">
-                <td className="px-3 py-2 font-mono text-xs">{a.asset_code}</td>
-                <td className="px-3 py-2">{a.name}</td>
-                <td className="px-3 py-2 text-gray-600">{a.category?.name || '-'}</td>
-                <td className={`px-3 py-2 font-medium ${assetStatusColor(a.status)}`}>
-                  {assetStatusLabel(a.status)}
-                </td>
-              </tr>
+              <TableRow key={a.id}>
+                <TableCell className="font-mono text-xs">{a.asset_code}</TableCell>
+                <TableCell>{a.name}</TableCell>
+                <TableCell className="text-gray-600">{a.category?.name || '-'}</TableCell>
+                <TableCell>
+                  <Badge variant={assetBadgeVariant(a.status)}>{assetStatusLabel(a.status)}</Badge>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
     </div>
   )

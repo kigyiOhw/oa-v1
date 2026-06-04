@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight, Mail, Phone, Search } from 'lucide-react'
 import { contactsApi, type ContactItem, type DepartmentTreeNode } from '../../api/contacts'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 function TreeNode({
   node,
@@ -131,12 +133,12 @@ export default function ContactsPage() {
           <div className="flex-1 min-w-0">
             <div className="relative mb-4">
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
+              <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('contacts.searchPlaceholder')}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border bg-white text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                className="pl-10"
               />
             </div>
 
@@ -178,21 +180,23 @@ export default function ContactsPage() {
 
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-6">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       disabled={page <= 1}
                       onClick={() => setPage(page - 1)}
-                      className="px-3 py-1 text-sm rounded-md border bg-white disabled:opacity-40"
                     >
                       {t('common.prev')}
-                    </button>
+                    </Button>
                     <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       disabled={page >= totalPages}
                       onClick={() => setPage(page + 1)}
-                      className="px-3 py-1 text-sm rounded-md border bg-white disabled:opacity-40"
                     >
                       {t('common.next')}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>

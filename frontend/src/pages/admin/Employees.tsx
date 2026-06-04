@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { employeeApi, employmentStatusColor, employmentStatusLabel, type EmployeeProfile } from '../../api/employees'
 import { deptApi, type DepartmentItem } from '../../api/departments'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 export default function Employees() {
   const { t } = useTranslation()
@@ -46,15 +50,14 @@ export default function Employees() {
       <h1 className="text-2xl font-bold mb-4">{t('employee.employeeList')}</h1>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <input
+        <Input
           type="text"
           placeholder={t('users.searchPlaceholder')}
-          className="border rounded px-3 py-1.5 text-sm w-56"
+          className="w-56"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
-        <select
-          className="border rounded px-3 py-1.5 text-sm"
+        <Select
           value={departmentId ?? ''}
           onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : undefined); setPage(1) }}
         >
@@ -62,75 +65,60 @@ export default function Employees() {
           {departments.map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
-        </select>
-        <select
-          className="border rounded px-3 py-1.5 text-sm"
+        </Select>
+        <Select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
         >
           <option value="">{t('employee.employmentStatus')}: {t('common.all')}</option>
           <option value="active">{t('employee.statusLabels.active')}</option>
           <option value="resigned">{t('employee.statusLabels.resigned')}</option>
-        </select>
+        </Select>
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('users.username')}</th>
-            <th className="px-3 py-2 text-left">{t('users.fullName')}</th>
-            <th className="px-3 py-2 text-left">{t('employee.department')}</th>
-            <th className="px-3 py-2 text-left">{t('employee.employmentStatus')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('users.username')}</TableHead>
+            <TableHead>{t('users.fullName')}</TableHead>
+            <TableHead>{t('employee.department')}</TableHead>
+            <TableHead>{t('employee.employmentStatus')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {employees.map((e) => (
-            <tr key={e.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{e.username}</td>
-              <td className="px-3 py-2">{e.full_name || '—'}</td>
-              <td className="px-3 py-2">{e.department_name || '—'}</td>
-              <td className="px-3 py-2">
+            <TableRow key={e.id}>
+              <TableCell>{e.username}</TableCell>
+              <TableCell>{e.full_name || '—'}</TableCell>
+              <TableCell>{e.department_name || '—'}</TableCell>
+              <TableCell>
                 <span className={employmentStatusColor(e.employment_status)}>
                   {employmentStatusLabel(e.employment_status)}
                 </span>
-              </td>
-              <td className="px-3 py-2 space-x-2">
-                <button
-                  className="text-blue-600 hover:underline text-xs"
-                  onClick={() => navigate(`/admin/employees/${e.id}`)}
-                >
+              </TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/admin/employees/${e.id}`)}>
                   {t('common.view')}
-                </button>
-                <button
-                  className="text-red-500 hover:underline text-xs"
-                  onClick={() => handleDelete(e.id)}
-                >
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(e.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span>{t('common.total')}: {total}</span>
-        <button
-          disabled={page <= 1}
-          onClick={() => setPage(page - 1)}
-          className="px-2 py-0.5 border rounded disabled:opacity-30"
-        >
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
           {t('common.prev')}
-        </button>
+        </Button>
         <span>{t('common.page')} {page}</span>
-        <button
-          disabled={page * 20 >= total}
-          onClick={() => setPage(page + 1)}
-          className="px-2 py-0.5 border rounded disabled:opacity-30"
-        >
+        <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>
           {t('common.next')}
-        </button>
+        </Button>
       </div>
     </div>
   )

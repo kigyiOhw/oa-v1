@@ -50,6 +50,50 @@ class LeaveRequestRepository:
         await self.session.refresh(leave)
         return leave
 
+    async def count_by_type_this_month(
+        self, year: int, month: int, user_id: int | None = None, dept_id: int | None = None
+    ) -> dict[str, int]:
+        base = select(LeaveRequest.leave_type, func.count(LeaveRequest.id)).where(
+            func.extract("year", LeaveRequest.created_at) == year,
+            func.extract("month", LeaveRequest.created_at) == month,
+        )
+        if user_id is not None:
+            base = base.where(LeaveRequest.user_id == user_id)
+        if dept_id is not None:
+            from app.models.user import User
+            base = base.join(User, LeaveRequest.user_id == User.id).where(User.department_id == dept_id)
+        rows = (await self.session.execute(base.group_by(LeaveRequest.leave_type))).all()
+        return {row[0]: row[1] for row in rows}
+
+    async def count_by_status_this_month(
+        self, year: int, month: int, user_id: int | None = None, dept_id: int | None = None
+    ) -> dict[str, int]:
+        base = select(LeaveRequest.status, func.count(LeaveRequest.id)).where(
+            func.extract("year", LeaveRequest.created_at) == year,
+            func.extract("month", LeaveRequest.created_at) == month,
+        )
+        if user_id is not None:
+            base = base.where(LeaveRequest.user_id == user_id)
+        if dept_id is not None:
+            from app.models.user import User
+            base = base.join(User, LeaveRequest.user_id == User.id).where(User.department_id == dept_id)
+        rows = (await self.session.execute(base.group_by(LeaveRequest.status))).all()
+        return {row[0]: row[1] for row in rows}
+
+    async def count_total_this_month(
+        self, year: int, month: int, user_id: int | None = None, dept_id: int | None = None
+    ) -> int:
+        base = select(func.count(LeaveRequest.id)).where(
+            func.extract("year", LeaveRequest.created_at) == year,
+            func.extract("month", LeaveRequest.created_at) == month,
+        )
+        if user_id is not None:
+            base = base.where(LeaveRequest.user_id == user_id)
+        if dept_id is not None:
+            from app.models.user import User
+            base = base.join(User, LeaveRequest.user_id == User.id).where(User.department_id == dept_id)
+        return (await self.session.execute(base)).scalar() or 0
+
     async def delete(self, leave: LeaveRequest) -> None:
         await self.session.delete(leave)
         await self.session.flush()

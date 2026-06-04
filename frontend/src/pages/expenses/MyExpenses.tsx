@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { expenseApi, ExpenseItem, expenseTypeLabel, expenseStatusColor } from '../../api/expense'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 export default function MyExpenses() {
   const { t } = useTranslation()
@@ -66,69 +68,56 @@ export default function MyExpenses() {
       <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t('expense.myExpenses')}</h1>
-        <Link
-          to="/expenses/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+        <Button onClick={() => navigate('/expenses/new')}>
           + {t('expense.newExpense')}
-        </Link>
+        </Button>
       </div>
 
       <div className="mb-4 flex gap-2 flex-wrap">
         {statusFilters.map((s) => (
-          <button
+          <Button
             key={s.value}
-            className={`px-3 py-1 text-sm rounded border ${
-              statusFilter === s.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
+            variant={statusFilter === s.value ? 'default' : 'outline'}
+            size="sm"
             onClick={() => { setStatusFilter(s.value); setPage(1) }}
           >
             {s.label}
-          </button>
+          </Button>
         ))}
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('expense.type')}</th>
-            <th className="px-3 py-2 text-left">{t('expense.amount')}</th>
-            <th className="px-3 py-2 text-left">{t('expense.description')}</th>
-            <th className="px-3 py-2 text-left">{t('expense.status')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('expense.type')}</TableHead>
+            <TableHead>{t('expense.amount')}</TableHead>
+            <TableHead>{t('expense.description')}</TableHead>
+            <TableHead>{t('expense.status')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {expenses.map((e) => (
-            <tr key={e.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{expenseTypeLabel(e.expense_type)}</td>
-              <td className="px-3 py-2">¥{e.amount}</td>
-              <td className="px-3 py-2 text-gray-600 max-w-xs truncate">{e.description}</td>
-              <td className={`px-3 py-2 font-medium ${expenseStatusColor(e.status)}`}>
+            <TableRow key={e.id}>
+              <TableCell>{expenseTypeLabel(e.expense_type)}</TableCell>
+              <TableCell>¥{e.amount}</TableCell>
+              <TableCell className="text-gray-600 max-w-xs truncate">{e.description}</TableCell>
+              <TableCell className={`font-medium ${expenseStatusColor(e.status)}`}>
                 {e.status}
-              </td>
-              <td className="px-3 py-2">
+              </TableCell>
+              <TableCell>
                 <div className="flex gap-2">
                   {e.status === 'draft' && (
                     <>
-                      <button
-                        className="text-blue-600 hover:underline text-xs"
-                        onClick={() => navigate(`/expenses/${e.id}/edit`)}
-                      >
+                      <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/expenses/${e.id}/edit`)}>
                         {t('common.edit')}
-                      </button>
-                      <button
-                        className="text-green-600 hover:underline text-xs"
-                        onClick={() => handleSubmit(e.id)}
-                      >
+                      </Button>
+                      <Button variant="link" size="sm" className="h-auto p-0 text-green-600" onClick={() => handleSubmit(e.id)}>
                         {t('common.submit')}
-                      </button>
-                      <button
-                        className="text-red-500 hover:underline text-xs"
-                        onClick={() => handleDelete(e.id)}
-                      >
+                      </Button>
+                      <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(e.id)}>
                         {t('common.delete')}
-                      </button>
+                      </Button>
                     </>
                   )}
                   {(e.status === 'submitted') && (
@@ -136,12 +125,9 @@ export default function MyExpenses() {
                       <Link to={`/expenses/${e.id}`} className="text-blue-600 hover:underline text-xs">
                         {t('common.view')}
                       </Link>
-                      <button
-                        className="text-red-500 hover:underline text-xs"
-                        onClick={() => handleCancel(e.id)}
-                      >
+                      <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleCancel(e.id)}>
                         {t('expense.cancelRequest')}
-                      </button>
+                      </Button>
                     </>
                   )}
                   {(e.status === 'approved' || e.status === 'rejected' || e.status === 'cancelled') && (
@@ -150,36 +136,28 @@ export default function MyExpenses() {
                     </Link>
                   )}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
           {expenses.length === 0 && (
-            <tr>
-              <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-gray-400 py-8">
                 {t('common.noData')}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             {t('common.prev')}
-          </button>
+          </Button>
           <span className="px-3 py-1 text-sm text-gray-600">{page} / {totalPages}</span>
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
             {t('common.next')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

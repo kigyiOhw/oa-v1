@@ -98,6 +98,23 @@ class UserRepository:
         await self.session.refresh(user)
         return user
 
+    async def count_active(self) -> int:
+        result = await self.session.execute(
+            select(func.count(User.id)).where(User.is_active)
+        )
+        return result.scalar() or 0
+
+    async def count_by_department(self) -> list[dict]:
+        from app.models.department import Department
+        result = await self.session.execute(
+            select(Department.id, Department.name, func.count(User.id))
+            .join(User.department)
+            .where(User.is_active)
+            .group_by(Department.id, Department.name)
+            .order_by(func.count(User.id).desc())
+        )
+        return [{"dept_id": row[0], "dept_name": row[1], "count": row[2]} for row in result]
+
     async def delete(self, user: User) -> None:
         await self.session.delete(user)
         await self.session.flush()

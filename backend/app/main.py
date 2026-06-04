@@ -12,6 +12,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.responses import Response
 
 from app.api.v1.audit import router as audit_router
+from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.announcements import router as announcements_router
 from app.api.v1.attendance import router as attendance_router
 from app.api.v1.assets import cat_router as asset_categories_router, asset_router
@@ -121,6 +122,7 @@ app.include_router(settings_router, prefix="/api/v1")
 app.include_router(expense_router, prefix="/api/v1")
 app.include_router(overtime_router, prefix="/api/v1")
 app.include_router(audit_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(ws_router)
 
 

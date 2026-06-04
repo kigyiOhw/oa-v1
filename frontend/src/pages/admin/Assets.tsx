@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { assetApi, type AssetItem, assetStatusLabel, assetStatusColor } from '../../api/assets'
 import { deptApi, type DepartmentItem } from '../../api/departments'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 export default function Assets() {
   const { t } = useTranslation()
@@ -57,21 +61,20 @@ export default function Assets() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('asset.title')}</h1>
-        <Link to="/admin/assets/new" className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-          + {t('asset.createAsset')}
+        <Link to="/admin/assets/new">
+          <Button size="sm">+ {t('asset.createAsset')}</Button>
         </Link>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <input
+        <Input
           type="text"
           placeholder={t('common.search') + '...'}
-          className="border rounded px-3 py-1.5 text-sm w-56"
+          className="w-56"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
-        <select
-          className="border rounded px-3 py-1.5 text-sm"
+        <Select
           value={categoryId ?? ''}
           onChange={(e) => { setCategoryId(e.target.value ? Number(e.target.value) : undefined); setPage(1) }}
         >
@@ -79,9 +82,8 @@ export default function Assets() {
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
-        </select>
-        <select
-          className="border rounded px-3 py-1.5 text-sm"
+        </Select>
+        <Select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
         >
@@ -90,9 +92,8 @@ export default function Assets() {
           <option value="idle">{t('asset.statusLabels.idle')}</option>
           <option value="scrapped">{t('asset.statusLabels.scrapped')}</option>
           <option value="repairing">{t('asset.statusLabels.repairing')}</option>
-        </select>
-        <select
-          className="border rounded px-3 py-1.5 text-sm"
+        </Select>
+        <Select
           value={departmentId ?? ''}
           onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : undefined); setPage(1) }}
         >
@@ -100,55 +101,55 @@ export default function Assets() {
           {departments.map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('asset.assetCode')}</th>
-            <th className="px-3 py-2 text-left">{t('asset.assetName')}</th>
-            <th className="px-3 py-2 text-left">{t('asset.category')}</th>
-            <th className="px-3 py-2 text-left">{t('asset.status')}</th>
-            <th className="px-3 py-2 text-left">{t('asset.department')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('asset.assetCode')}</TableHead>
+            <TableHead>{t('asset.assetName')}</TableHead>
+            <TableHead>{t('asset.category')}</TableHead>
+            <TableHead>{t('asset.status')}</TableHead>
+            <TableHead>{t('asset.department')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {assets.map((a) => (
-            <tr key={a.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2 font-mono text-xs">{a.asset_code}</td>
-              <td className="px-3 py-2">{a.name}</td>
-              <td className="px-3 py-2 text-gray-600">{a.category?.name || '-'}</td>
-              <td className={`px-3 py-2 font-medium ${assetStatusColor(a.status)}`}>
+            <TableRow key={a.id}>
+              <TableCell className="font-mono text-xs">{a.asset_code}</TableCell>
+              <TableCell>{a.name}</TableCell>
+              <TableCell className="text-muted-foreground">{a.category?.name || '-'}</TableCell>
+              <TableCell className={`font-medium ${assetStatusColor(a.status)}`}>
                 {assetStatusLabel(a.status)}
-              </td>
-              <td className="px-3 py-2 text-gray-600">{a.department && (a.department as any).name ? (a.department as any).name : '-'}</td>
-              <td className="px-3 py-2 space-x-2">
-                <button onClick={() => navigate(`/admin/assets/${a.id}`)} className="text-blue-600 hover:underline text-xs">
+              </TableCell>
+              <TableCell className="text-muted-foreground">{a.department && (a.department as any).name ? (a.department as any).name : '-'}</TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/admin/assets/${a.id}`)}>
                   {t('common.view')}
-                </button>
-                <button onClick={() => navigate(`/admin/assets/${a.id}/edit`)} className="text-blue-600 hover:underline text-xs">
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/admin/assets/${a.id}/edit`)}>
                   {t('common.edit')}
-                </button>
-                <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:underline text-xs">
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(a.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span>{t('common.total')}: {total}</span>
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-2 py-0.5 border rounded disabled:opacity-30">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
           {t('common.prev')}
-        </button>
+        </Button>
         <span>{t('common.page')} {page}</span>
-        <button disabled={page * 20 >= total} onClick={() => setPage(page + 1)} className="px-2 py-0.5 border rounded disabled:opacity-30">
+        <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>
           {t('common.next')}
-        </button>
+        </Button>
       </div>
     </div>
   )

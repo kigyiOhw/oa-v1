@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Folder, File } from 'lucide-react'
 import { deptApi, DepartmentTreeItem, DepartmentItem } from '../../api/departments'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 export default function Departments() {
   const { t } = useTranslation()
@@ -29,12 +33,9 @@ export default function Departments() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('departments.title')}</h1>
-        <button
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-          onClick={() => setShowCreate(true)}
-        >
+        <Button size="sm" onClick={() => setShowCreate(true)}>
           {t('departments.addDepartment')}
-        </button>
+        </Button>
       </div>
 
       <div className="border rounded p-4">
@@ -92,23 +93,17 @@ function DeptNode({
         style={{ paddingLeft: depth * 24 + 8 }}
       >
         <span className="text-sm flex-1">
-          {dept.children.length > 0 ? '📁' : '📄'} {dept.name}
+          {dept.children.length > 0 ? <Folder size={16} className="inline mr-1" /> : <File size={16} className="inline mr-1" />} {dept.name}
           {dept.description && (
             <span className="text-gray-400 ml-2 text-xs">{dept.description}</span>
           )}
         </span>
-        <button
-          className="text-blue-600 hover:underline text-xs"
-          onClick={() => onEdit(dept)}
-        >
+        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => onEdit(dept)}>
           {t('common.edit')}
-        </button>
-        <button
-          className="text-red-500 hover:underline text-xs"
-          onClick={() => onDelete(dept.id)}
-        >
+        </Button>
+        <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => onDelete(dept.id)}>
           {t('common.delete')}
-        </button>
+        </Button>
       </div>
       {dept.children.map((child) => (
         <DeptNode
@@ -176,55 +171,34 @@ function DeptFormModal({
         <h2 className="text-lg font-bold mb-4">{title}</h2>
         <label className="block mb-2 text-sm">
           {t('departments.name')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <Input className="mt-0.5" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label className="block mb-2 text-sm">
           {t('departments.parentDepartment')}
-          <select
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={parentId ?? ''}
-            onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}
-          >
+          <Select className="mt-0.5" value={parentId ?? ''} onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}>
             <option value="">{t('departments.noneRoot')}</option>
             {validParents.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="block mb-2 text-sm">
           {t('departments.description')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <Input className="mt-0.5" value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
         <label className="block mb-4 text-sm">
           {t('departments.sortOrder')}
-          <input
-            type="number"
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(Number(e.target.value))}
-          />
+          <Input type="number" className="mt-0.5" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
         </label>
         <div className="flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-          >
+          <Button className="flex-1" onClick={handleSave} disabled={saving || !name.trim()}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { employeeApi, type EmployeeProfile } from '../../api/employees'
 import { userApi, type UserItem } from '../../api/users'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 const EDUCATION_LEVELS = ['high_school', 'associate', 'bachelor', 'master', 'doctor', 'other']
 
@@ -129,8 +134,7 @@ export default function EmployeeDetail() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-4">
-        <button onClick={() => navigate('/admin/employees')}
-          className="text-sm text-blue-600 hover:underline">&larr; {t('employee.employeeList')}</button>
+        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/admin/employees')}><ArrowLeft size={14} className="inline" /> {t('employee.employeeList')}</Button>
       </div>
       <h1 className="text-2xl font-bold mb-6">
         {profile.full_name || profile.username} — {t('employee.employeeDetail')}
@@ -146,63 +150,53 @@ export default function EmployeeDetail() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.phone')}</label>
-              <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.birthday')}</label>
-              <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
             </div>
             <div className="col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.address')}</label>
-              <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.educationLevel')}</label>
-              <select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <Select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)}>
                 <option value="">--</option>
                 {EDUCATION_LEVELS.map((l) => (
                   <option key={l} value={l}>{t(`employee.educationLevels.${l}`)}</option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.graduationSchool')}</label>
-              <input type="text" value={graduationSchool} onChange={(e) => setGraduationSchool(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Input type="text" value={graduationSchool} onChange={(e) => setGraduationSchool(e.target.value)} />
             </div>
             <div className="col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.workExperience')}</label>
-              <textarea value={workExperience} onChange={(e) => setWorkExperience(e.target.value)} rows={3}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Textarea value={workExperience} onChange={(e) => setWorkExperience(e.target.value)} rows={3} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.joinDate')}</label>
-              <input type="date" value={joinDate} onChange={(e) => setJoinDate(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              <Input type="date" value={joinDate} onChange={(e) => setJoinDate(e.target.value)} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.employmentStatus')}</label>
-              <select value={employmentStatus} onChange={(e) => setEmploymentStatus(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <Select value={employmentStatus} onChange={(e) => setEmploymentStatus(e.target.value)}>
                 <option value="active">{t('employee.statusLabels.active')}</option>
                 <option value="resigned">{t('employee.statusLabels.resigned')}</option>
-              </select>
+              </Select>
             </div>
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button onClick={handleSave} disabled={saving}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            <Button onClick={handleSave} disabled={saving}>
               {saving ? t('common.saving') : t('common.save')}
-            </button>
-            <button onClick={() => { setEditing(false); populateForm(profile) }}
-              className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">
+            </Button>
+            <Button variant="outline" onClick={() => { setEditing(false); populateForm(profile) }}>
               {t('common.cancel')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -272,15 +266,13 @@ export default function EmployeeDetail() {
 
           {/* Actions */}
           <div className="flex gap-2 pt-2 border-t">
-            <button onClick={startEditing}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <Button onClick={startEditing}>
               {t('common.edit')}
-            </button>
+            </Button>
             {!isResigned && (
-              <button onClick={openResign}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+              <Button variant="destructive" onClick={openResign}>
                 {t('employee.resign')}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -298,10 +290,9 @@ export default function EmployeeDetail() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.successor')}</label>
-                <select
+                <Select
                   value={successorId ?? ''}
                   onChange={(e) => setSuccessorId(Number(e.target.value))}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="">-- 请选择 --</option>
                   {users
@@ -311,25 +302,22 @@ export default function EmployeeDetail() {
                         {u.full_name || u.username} ({u.username})
                       </option>
                     ))}
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.resignationDateOptional')}</label>
-                <input type="date" value={resignationDate} onChange={(e) => setResignationDate(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <Input type="date" value={resignationDate} onChange={(e) => setResignationDate(e.target.value)} />
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button onClick={handleResign} disabled={saving || !successorId}
-                className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">
+              <Button variant="destructive" onClick={handleResign} disabled={saving || !successorId} className="flex-1">
                 {saving ? t('common.processing') : t('employee.resignConfirm')}
-              </button>
-              <button onClick={() => setResignOpen(false)}
-                className="flex-1 rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">
+              </Button>
+              <Button variant="outline" onClick={() => setResignOpen(false)} className="flex-1">
                 {t('common.cancel')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

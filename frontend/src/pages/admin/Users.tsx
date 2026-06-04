@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { userApi, UserItem } from '../../api/users'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function Users() {
   const { t } = useTranslation()
@@ -30,75 +33,61 @@ export default function Users() {
     <div>
       <h1 className="text-2xl font-bold mb-4">{t('users.title')}</h1>
       <div className="mb-4">
-        <input
+        <Input
           type="text"
           placeholder={t('users.searchPlaceholder')}
-          className="border rounded px-3 py-1.5 text-sm w-64"
+          className="w-64"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
         />
       </div>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">{t('users.username')}</th>
-            <th className="px-3 py-2 text-left">{t('users.email')}</th>
-            <th className="px-3 py-2 text-left">{t('users.roles')}</th>
-            <th className="px-3 py-2 text-left">{t('users.status')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>{t('users.username')}</TableHead>
+            <TableHead>{t('users.email')}</TableHead>
+            <TableHead>{t('users.roles')}</TableHead>
+            <TableHead>{t('users.status')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {users.map((u) => (
-            <tr key={u.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{u.id}</td>
-              <td className="px-3 py-2">{u.username}</td>
-              <td className="px-3 py-2">{u.email}</td>
-              <td className="px-3 py-2">{u.roles.map((r) => r.name).join(', ') || '-'}</td>
-              <td className="px-3 py-2">
+            <TableRow key={u.id}>
+              <TableCell>{u.id}</TableCell>
+              <TableCell>{u.username}</TableCell>
+              <TableCell>{u.email}</TableCell>
+              <TableCell>{u.roles.map((r) => r.name).join(', ') || '-'}</TableCell>
+              <TableCell>
                 {u.is_active ? (
                   <span className="text-green-600">{t('users.active')}</span>
                 ) : (
                   <span className="text-red-500">{t('users.disabled')}</span>
                 )}
                 {u.is_superuser && <span className="ml-1 text-amber-600">· {t('users.admin')}</span>}
-              </td>
-              <td className="px-3 py-2 space-x-2">
-                <button
-                  className="text-blue-600 hover:underline text-xs"
-                  onClick={() => setEditing(u)}
-                >
+              </TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditing(u)}>
                   {t('common.edit')}
-                </button>
-                <button
-                  className="text-red-500 hover:underline text-xs"
-                  onClick={() => handleDelete(u.id)}
-                >
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(u.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+        </TableBody>
+      </Table>
+      <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span>{t('common.total')}: {total}</span>
-        <button
-          disabled={page <= 1}
-          onClick={() => setPage(page - 1)}
-          className="px-2 py-0.5 border rounded disabled:opacity-30"
-        >
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
           {t('common.prev')}
-        </button>
+        </Button>
         <span>{t('common.page')} {page}</span>
-        <button
-          disabled={page * 20 >= total}
-          onClick={() => setPage(page + 1)}
-          className="px-2 py-0.5 border rounded disabled:opacity-30"
-        >
+        <Button variant="outline" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>
           {t('common.next')}
-        </button>
+        </Button>
       </div>
 
       {editing && (
@@ -148,22 +137,14 @@ function EditUserModal({
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-auto">
         <h2 className="text-lg font-bold mb-4">{t('users.editUser')}: {user.username}</h2>
-        <label className="block mb-2 text-sm">
-          {t('users.email')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="block mb-2 text-sm">
-          {t('users.fullName')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-        </label>
+        <div className="mb-2">
+          <label className="block text-sm mb-1">{t('users.email')}</label>
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="mb-2">
+          <label className="block text-sm mb-1">{t('users.fullName')}</label>
+          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </div>
         <label className="flex items-center gap-2 mb-2 text-sm">
           <input
             type="checkbox"
@@ -200,16 +181,12 @@ function EditUserModal({
           </div>
         </div>
         <div className="flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <Button className="flex-1" onClick={handleSave} disabled={saving}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Bell, GitBranch, Megaphone, Package } from 'lucide-react'
 import { useNotificationStore, type Notification } from '../../stores/notification'
+import { Button } from '@/components/ui/button'
 
 function getLink(n: Notification): string | null {
   if (n.reference_type === 'task') return `/workflow/tasks/${n.reference_id}`
@@ -65,18 +66,20 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-gray-900">{t('notification.title')}</h1>
           <div className="flex gap-1 bg-white rounded-lg border p-0.5">
-            <button
+            <Button
+              variant={tab === 'all' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => { setTab('all'); setPage(1) }}
-              className={`px-3 py-1 text-sm rounded-md ${tab === 'all' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'}`}
             >
               {t('notification.all')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={tab === 'unread' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => { setTab('unread'); setPage(1) }}
-              className={`px-3 py-1 text-sm rounded-md ${tab === 'unread' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'}`}
             >
               {t('notification.unread')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -112,21 +115,23 @@ export default function NotificationsPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-6">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="px-3 py-1 text-sm rounded-md border bg-white disabled:opacity-40"
             >
               {t('common.prev')}
-            </button>
+            </Button>
             <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
-              className="px-3 py-1 text-sm rounded-md border bg-white disabled:opacity-40"
             >
               {t('common.next')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

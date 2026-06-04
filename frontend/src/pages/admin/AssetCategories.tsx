@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { assetApi, type AssetCategory } from '../../api/assets'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 export default function AssetCategories() {
   const { t } = useTranslation()
@@ -60,35 +64,33 @@ export default function AssetCategories() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-gray-900">{t('asset.categories')}</h1>
-        <button onClick={() => openCreate()} className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-          + {t('common.create')}
-        </button>
+        <Button size="sm" onClick={() => openCreate()}>+ {t('common.create')}</Button>
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('asset.assetName')}</th>
-            <th className="px-3 py-2 text-left">{t('asset.description')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('asset.assetName')}</TableHead>
+            <TableHead>{t('asset.description')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {allCategories.map((c) => (
-            <tr key={c.id} className="border-t">
-              <td className="px-3 py-2" style={{ paddingLeft: `${12 + c.depth * 24}px` }}>
+            <TableRow key={c.id}>
+              <TableCell style={{ paddingLeft: `${12 + c.depth * 24}px` }}>
                 {c.depth > 0 ? '└ ' : ''}{c.name}
-              </td>
-              <td className="px-3 py-2 text-gray-500">{c.description || '-'}</td>
-              <td className="px-3 py-2">
-                <button onClick={() => openCreate(c.id)} className="text-blue-600 hover:underline text-xs mr-2">{t('common.create')}</button>
-                <button onClick={() => openEdit(c)} className="text-blue-600 hover:underline text-xs mr-2">{t('common.edit')}</button>
-                <button onClick={() => handleDelete(c.id)} className="text-red-500 hover:underline text-xs">{t('common.delete')}</button>
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-muted-foreground">{c.description || '-'}</TableCell>
+              <TableCell>
+                <Button variant="link" size="sm" className="h-auto p-0 mr-2" onClick={() => openCreate(c.id)}>{t('common.create')}</Button>
+                <Button variant="link" size="sm" className="h-auto p-0 mr-2" onClick={() => openEdit(c)}>{t('common.edit')}</Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(c.id)}>{t('common.delete')}</Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
@@ -97,29 +99,28 @@ export default function AssetCategories() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs mb-1">{t('asset.category')}</label>
-                <select value={parentId ?? ''} onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full border rounded px-2 py-1.5 text-sm">
+                <Select value={parentId ?? ''} onChange={(e) => setParentId(e.target.value ? Number(e.target.value) : null)}>
                   <option value="">— {t('asset.categories')} —</option>
                   {allCategories.filter(c => c.id !== editId).map(c => (
                     <option key={c.id} value={c.id}>{'—'.repeat(c.depth)}{c.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs mb-1">{t('asset.assetName')}</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" />
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div>
                 <label className="block text-xs mb-1">{t('asset.description')}</label>
-                <input value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded px-2 py-1.5 text-sm" />
+                <Input value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
               <div className="flex gap-2 pt-2">
-                <button onClick={handleSave} disabled={saving} className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50">
+                <Button onClick={handleSave} disabled={saving}>
                   {saving ? t('common.saving') : t('common.save')}
-                </button>
-                <button onClick={() => setShowForm(false)} className="rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50">
+                </Button>
+                <Button variant="outline" onClick={() => setShowForm(false)}>
                   {t('common.cancel')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

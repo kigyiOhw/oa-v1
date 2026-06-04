@@ -125,6 +125,13 @@ class AssetRepository:
         await self.session.refresh(asset)
         return asset
 
+    async def count_by_status(self, dept_id: int | None = None) -> dict[str, int]:
+        base = select(Asset.status, func.count(Asset.id))
+        if dept_id is not None:
+            base = base.where(Asset.department_id == dept_id)
+        rows = (await self.session.execute(base.group_by(Asset.status))).all()
+        return {row[0]: row[1] for row in rows}
+
     async def delete(self, asset: Asset) -> None:
         await self.session.delete(asset)
         await self.session.flush()

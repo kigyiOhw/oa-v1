@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { leaveApi } from '../../api/leave'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function LeaveCreate() {
   const { t } = useTranslation()
@@ -115,32 +119,29 @@ export default function LeaveCreate() {
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">{t('leave.leaveType')}</label>
-          <select
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Select
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
           >
             {LEAVE_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t('leave.startDate')}</label>
-            <input
+            <Input
               type="date"
-              className="w-full border rounded px-3 py-2 text-sm"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('leave.endDate')}</label>
-            <input
+            <Input
               type="date"
-              className="w-full border rounded px-3 py-2 text-sm"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
@@ -149,9 +150,8 @@ export default function LeaveCreate() {
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('leave.duration')}</label>
-          <input
+          <Input
             type="number"
-            className="w-full border rounded px-3 py-2 text-sm"
             value={durationDays}
             min={1}
             onChange={(e) => setDurationDays(Number(e.target.value))}
@@ -160,8 +160,7 @@ export default function LeaveCreate() {
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('leave.reason')}</label>
-          <textarea
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Textarea
             rows={4}
             placeholder={t('leave.reasonPlaceholder')}
             value={reason}
@@ -170,26 +169,15 @@ export default function LeaveCreate() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
-            className="px-4 py-2 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSaveDraft}
-          >
+          <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>
             {saving ? t('common.saving') : t('leave.saveDraft')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSubmit}
-          >
+          </Button>
+          <Button disabled={saving} onClick={handleSubmit}>
             {saving ? t('common.processing') : t('leave.submitApproval')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm text-gray-500 hover:underline"
-            onClick={() => navigate('/leaves')}
-          >
+          </Button>
+          <Button variant="link" className="h-auto p-0" onClick={() => navigate('/leaves')}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

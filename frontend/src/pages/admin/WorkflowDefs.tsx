@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { workflowDefApi, DefinitionItem } from '../../api/workflow'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function WorkflowDefs() {
   const { t } = useTranslation()
@@ -31,54 +35,45 @@ export default function WorkflowDefs() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('workflowDefs.title')}</h1>
-        <button
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-          onClick={() => setShowCreate(true)}
-        >
+        <Button size="sm" onClick={() => setShowCreate(true)}>
           {t('workflowDefs.createDefinition')}
-        </button>
+        </Button>
       </div>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">{t('workflowDefs.name')}</th>
-            <th className="px-3 py-2 text-left">{t('workflowDefs.description')}</th>
-            <th className="px-3 py-2 text-left">{t('workflowDefs.version')}</th>
-            <th className="px-3 py-2 text-left">{t('workflowDefs.active')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>{t('workflowDefs.name')}</TableHead>
+            <TableHead>{t('workflowDefs.description')}</TableHead>
+            <TableHead>{t('workflowDefs.version')}</TableHead>
+            <TableHead>{t('workflowDefs.active')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {defs.map((d) => (
-            <tr key={d.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{d.id}</td>
-              <td className="px-3 py-2 font-medium">{d.name}</td>
-              <td className="px-3 py-2">{d.description || '-'}</td>
-              <td className="px-3 py-2">v{d.version}</td>
-              <td className="px-3 py-2">
+            <TableRow key={d.id}>
+              <TableCell>{d.id}</TableCell>
+              <TableCell className="font-medium">{d.name}</TableCell>
+              <TableCell>{d.description || '-'}</TableCell>
+              <TableCell>v{d.version}</TableCell>
+              <TableCell>
                 <span className={d.is_active ? 'text-green-600' : 'text-gray-400'}>
                   {d.is_active ? t('common.yes') : t('common.no')}
                 </span>
-              </td>
-              <td className="px-3 py-2 space-x-2">
-                <button
-                  className="text-blue-600 hover:underline text-xs"
-                  onClick={() => setEditing(d)}
-                >
+              </TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditing(d)}>
                   {t('common.edit')}
-                </button>
-                <button
-                  className="text-red-500 hover:underline text-xs"
-                  onClick={() => handleDelete(d.id)}
-                >
+                </Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(d.id)}>
                   {t('common.delete')}
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {showCreate && (
         <DefFormModal
@@ -161,27 +156,15 @@ function DefFormModal({
         {error && <div className="mb-3 text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
         <label className="block mb-2 text-sm">
           {t('workflowDefs.name')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <Input className="mt-0.5" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label className="block mb-2 text-sm">
           {t('workflowDefs.description')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <Input className="mt-0.5" value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
         <label className="block mb-2 text-sm">
           {t('workflowDefs.icon')}
-          <input
-            className="block w-full border rounded px-2 py-1 mt-0.5"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-          />
+          <Input className="mt-0.5" value={icon} onChange={(e) => setIcon(e.target.value)} />
         </label>
         {def && (
           <label className="flex items-center gap-2 mb-2 text-sm">
@@ -195,24 +178,15 @@ function DefFormModal({
         )}
         <label className="block mb-4 text-sm">
           {t('workflowDefs.definition')}
-          <textarea
-            className="block w-full border rounded px-2 py-1 mt-0.5 font-mono text-xs"
-            rows={14}
-            value={definitionStr}
-            onChange={(e) => setDefinitionStr(e.target.value)}
-          />
+          <Textarea className="mt-0.5 font-mono text-xs" rows={14} value={definitionStr} onChange={(e) => setDefinitionStr(e.target.value)} />
         </label>
         <div className="flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-          >
+          <Button className="flex-1" onClick={handleSave} disabled={saving || !name.trim()}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { employeeApi, type EmployeeProfile } from '../../api/employees'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 const EDUCATION_LEVELS = ['high_school', 'associate', 'bachelor', 'master', 'doctor', 'other']
 
@@ -102,46 +106,39 @@ export default function MyProfile() {
           <h2 className="text-lg font-semibold text-gray-800">{t('employee.contactInfo')}</h2>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.phone')}</label>
-            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.address')}</label>
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />
           </div>
 
           <h2 className="text-lg font-semibold text-gray-800 pt-2">{t('employee.identityInfo')}</h2>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.birthday')}</label>
-            <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.educationLevel')}</label>
-            <select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <Select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)}>
               <option value="">--</option>
               {EDUCATION_LEVELS.map((l) => (
                 <option key={l} value={l}>{t(`employee.educationLevels.${l}`)}</option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.graduationSchool')}</label>
-            <input type="text" value={graduationSchool} onChange={(e) => setGraduationSchool(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input type="text" value={graduationSchool} onChange={(e) => setGraduationSchool(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.workExperience')}</label>
-            <textarea value={workExperience} onChange={(e) => setWorkExperience(e.target.value)} rows={3}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Textarea value={workExperience} onChange={(e) => setWorkExperience(e.target.value)} rows={3} />
           </div>
 
-          <button onClick={handleOnboarding} disabled={saving}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+          <Button onClick={handleOnboarding} disabled={saving} className="w-full">
             {saving ? t('common.saving') : t('employee.completeOnboarding')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -211,8 +208,9 @@ export default function MyProfile() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-800">{t('employee.contactInfo')}</h2>
             {!editContact && (
-              <button onClick={() => setEditContact(true)}
-                className="text-sm text-blue-600 hover:underline">{t('common.edit')}</button>
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditContact(true)}>
+                {t('common.edit')}
+              </Button>
             )}
           </div>
 
@@ -220,23 +218,19 @@ export default function MyProfile() {
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.phone')}</label>
-                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <Input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">{t('employee.address')}</label>
-                <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />
               </div>
               <div className="flex gap-2">
-                <button onClick={handleSaveContact} disabled={saving}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                <Button onClick={handleSaveContact} disabled={saving}>
                   {saving ? t('common.saving') : t('common.save')}
-                </button>
-                <button onClick={() => { setEditContact(false); setPhone(profile.phone || ''); setAddress(profile.address || '') }}
-                  className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">
+                </Button>
+                <Button variant="secondary" onClick={() => { setEditContact(false); setPhone(profile.phone || ''); setAddress(profile.address || '') }}>
                   {t('common.cancel')}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (

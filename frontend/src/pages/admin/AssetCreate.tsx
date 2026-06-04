@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { assetApi } from '../../api/assets'
 import { deptApi, type DepartmentItem } from '../../api/departments'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function AssetCreate() {
   const { t } = useTranslation()
@@ -86,85 +91,74 @@ export default function AssetCreate() {
 
   return (
     <div>
-      <button onClick={() => navigate('/admin/assets')} className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-        &larr; {t('asset.title')}
-      </button>
+      <Button variant="link" size="sm" className="h-auto p-0 mb-4" onClick={() => navigate('/admin/assets')}>
+        <ArrowLeft size={14} className="inline" /> {t('asset.title')}
+      </Button>
       <h1 className="text-2xl font-bold mb-6">{isEdit ? t('asset.editAsset') : t('asset.createAsset')}</h1>
 
       <div className="rounded-lg bg-white p-6 shadow max-w-2xl space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.assetName')} *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.category')} *</label>
-            <select value={categoryId ?? ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <Select value={categoryId ?? ''} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}>
               <option value="">--</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.department')}</label>
-            <select value={departmentId ?? ''} onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : null)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <Select value={departmentId ?? ''} onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : null)}>
               <option value="">--</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
           {isEdit && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.status')}</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+              <Select value={status} onChange={(e) => setStatus(e.target.value)}>
                 <option value="in_use">{t('asset.statusLabels.in_use')}</option>
                 <option value="idle">{t('asset.statusLabels.idle')}</option>
                 <option value="scrapped">{t('asset.statusLabels.scrapped')}</option>
                 <option value="repairing">{t('asset.statusLabels.repairing')}</option>
-              </select>
+              </Select>
             </div>
           )}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.purchaseDate')}</label>
-            <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.purchasePrice')}</label>
-            <input type="number" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input type="number" step="0.01" value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.supplier')}</label>
-            <input value={supplier} onChange={(e) => setSupplier(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+            <Input value={supplier} onChange={(e) => setSupplier(e.target.value)} />
           </div>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.specification')}</label>
-          <textarea value={specification} onChange={(e) => setSpecification(e.target.value)} rows={3} placeholder='{"color": "black", "size": "XL"}'
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+          <Textarea value={specification} onChange={(e) => setSpecification(e.target.value)} rows={3} placeholder='{"color": "black", "size": "XL"}' />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">{t('asset.description')}</label>
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
         </div>
         <div className="flex gap-2 pt-2">
-          <button onClick={handleSave} disabled={saving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button onClick={() => navigate('/admin/assets')}
-            className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200">
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin/assets')}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -41,31 +43,29 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.username')}</label>
-            <input
+            <Input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{t('auth.password')}</label>
-            <input
+            <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full"
           >
             {loading ? t('auth.loggingIn') : t('auth.login')}
-          </button>
+          </Button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">
           {t('auth.noAccount')}{' '}

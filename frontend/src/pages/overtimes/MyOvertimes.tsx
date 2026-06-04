@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { overtimeApi, OvertimeItem, overtimeStatusColor } from '../../api/overtime'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 export default function MyOvertimes() {
   const { t } = useTranslation()
@@ -66,71 +68,58 @@ export default function MyOvertimes() {
       <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t('overtime.myOvertimes')}</h1>
-        <Link
-          to="/overtimes/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+        <Button onClick={() => navigate('/overtimes/new')}>
           + {t('overtime.newOvertime')}
-        </Link>
+        </Button>
       </div>
 
       <div className="mb-4 flex gap-2 flex-wrap">
         {statusFilters.map((s) => (
-          <button
+          <Button
             key={s.value}
-            className={`px-3 py-1 text-sm rounded border ${
-              statusFilter === s.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
+            variant={statusFilter === s.value ? 'default' : 'outline'}
+            size="sm"
             onClick={() => { setStatusFilter(s.value); setPage(1) }}
           >
             {s.label}
-          </button>
+          </Button>
         ))}
       </div>
 
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('overtime.timeRange')}</th>
-            <th className="px-3 py-2 text-left">{t('overtime.hours')}</th>
-            <th className="px-3 py-2 text-left">{t('overtime.reason')}</th>
-            <th className="px-3 py-2 text-left">{t('overtime.status')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('overtime.timeRange')}</TableHead>
+            <TableHead>{t('overtime.hours')}</TableHead>
+            <TableHead>{t('overtime.reason')}</TableHead>
+            <TableHead>{t('overtime.status')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {overtimes.map((o) => (
-            <tr key={o.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2 text-gray-600">
+            <TableRow key={o.id}>
+              <TableCell className="text-gray-600">
                 {new Date(o.start_time).toLocaleString()} ~ {new Date(o.end_time).toLocaleString()}
-              </td>
-              <td className="px-3 py-2">{o.duration_hours}h</td>
-              <td className="px-3 py-2 text-gray-600 max-w-xs truncate">{o.reason}</td>
-              <td className={`px-3 py-2 font-medium ${overtimeStatusColor(o.status)}`}>
+              </TableCell>
+              <TableCell>{o.duration_hours}h</TableCell>
+              <TableCell className="text-gray-600 max-w-xs truncate">{o.reason}</TableCell>
+              <TableCell className={`font-medium ${overtimeStatusColor(o.status)}`}>
                 {o.status}
-              </td>
-              <td className="px-3 py-2">
+              </TableCell>
+              <TableCell>
                 <div className="flex gap-2">
                   {o.status === 'draft' && (
                     <>
-                      <button
-                        className="text-blue-600 hover:underline text-xs"
-                        onClick={() => navigate(`/overtimes/${o.id}/edit`)}
-                      >
+                      <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate(`/overtimes/${o.id}/edit`)}>
                         {t('common.edit')}
-                      </button>
-                      <button
-                        className="text-green-600 hover:underline text-xs"
-                        onClick={() => handleSubmit(o.id)}
-                      >
+                      </Button>
+                      <Button variant="link" size="sm" className="h-auto p-0 text-green-600" onClick={() => handleSubmit(o.id)}>
                         {t('common.submit')}
-                      </button>
-                      <button
-                        className="text-red-500 hover:underline text-xs"
-                        onClick={() => handleDelete(o.id)}
-                      >
+                      </Button>
+                      <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(o.id)}>
                         {t('common.delete')}
-                      </button>
+                      </Button>
                     </>
                   )}
                   {(o.status === 'submitted') && (
@@ -138,12 +127,9 @@ export default function MyOvertimes() {
                       <Link to={`/overtimes/${o.id}`} className="text-blue-600 hover:underline text-xs">
                         {t('common.view')}
                       </Link>
-                      <button
-                        className="text-red-500 hover:underline text-xs"
-                        onClick={() => handleCancel(o.id)}
-                      >
+                      <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleCancel(o.id)}>
                         {t('overtime.cancelRequest')}
-                      </button>
+                      </Button>
                     </>
                   )}
                   {(o.status === 'approved' || o.status === 'rejected' || o.status === 'cancelled') && (
@@ -152,36 +138,28 @@ export default function MyOvertimes() {
                     </Link>
                   )}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
           {overtimes.length === 0 && (
-            <tr>
-              <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-gray-400 py-8">
                 {t('common.noData')}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             {t('common.prev')}
-          </button>
+          </Button>
           <span className="px-3 py-1 text-sm text-gray-600">{page} / {totalPages}</span>
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
             {t('common.next')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

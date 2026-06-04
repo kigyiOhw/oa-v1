@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { mediaApi, MediaFile } from '../../api/media'
+import { Button } from '@/components/ui/button'
 
 export default function Media() {
   const { t } = useTranslation()
@@ -55,13 +56,9 @@ export default function Media() {
             className="hidden"
             onChange={handleUpload}
           />
-          <button
-            className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:opacity-50"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
+          <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             {uploading ? t('common.uploading') : t('media.uploadFile')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -82,12 +79,9 @@ export default function Media() {
                   {f.file_type} · {(f.file_size / 1024).toFixed(0)}KB
                 </p>
               </div>
-              <button
-                className="text-red-500 hover:underline text-xs ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleDelete(f.id)}
-              >
+              <Button variant="link" size="sm" className="h-auto p-0 text-red-500 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDelete(f.id)}>
                 {t('common.delete')}
-              </button>
+              </Button>
             </div>
           </div>
         ))}
@@ -98,13 +92,14 @@ export default function Media() {
 
       <div className="flex justify-center gap-2 mt-4">
         {Array.from({ length: Math.ceil(total / 20) }, (_, i) => (
-          <button
+          <Button
             key={i}
-            className={`px-3 py-1 rounded text-sm ${page === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            variant={page === i + 1 ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setPage(i + 1)}
           >
             {i + 1}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 import { overtimeApi, OvertimeItem, overtimeStatusColor } from '../../api/overtime'
 import { workflowApi, HistoryItem } from '../../api/workflow'
+import { Button } from '@/components/ui/button'
 
 export default function OvertimeDetail() {
   const { t } = useTranslation()
@@ -47,12 +49,9 @@ export default function OvertimeDetail() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="flex gap-4 mb-4">
         <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
-        <button
-          className="text-blue-600 hover:underline text-sm"
-          onClick={() => navigate('/overtimes')}
-        >
-          &larr; {t('overtime.backToMyOvertimes')}
-        </button>
+        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/overtimes')}>
+          <ArrowLeft size={14} className="inline" /> {t('overtime.backToMyOvertimes')}
+        </Button>
       </div>
 
       <div className="bg-white rounded-lg border p-6 mb-6">
@@ -89,12 +88,9 @@ export default function OvertimeDetail() {
 
         {overtime.status === 'submitted' && (
           <div className="mt-4 pt-4 border-t">
-            <button
-              className="px-4 py-2 text-sm bg-red-100 text-red-600 rounded hover:bg-red-200"
-              onClick={handleCancel}
-            >
+            <Button variant="outline" onClick={handleCancel}>
               {t('overtime.cancelRequest')}
-            </button>
+            </Button>
           </div>
         )}
       </div>

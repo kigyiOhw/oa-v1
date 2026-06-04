@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { expenseApi } from '../../api/expense'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function ExpenseCreate() {
   const { t } = useTranslation()
@@ -91,24 +95,22 @@ export default function ExpenseCreate() {
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">{t('expense.expenseType')}</label>
-          <select
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Select
             value={expenseType}
             onChange={(e) => setExpenseType(e.target.value)}
           >
             {EXPENSE_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('expense.amount')} (¥)</label>
-          <input
+          <Input
             type="number"
             step="0.01"
             min="0.01"
-            className="w-full border rounded px-3 py-2 text-sm"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
@@ -117,8 +119,7 @@ export default function ExpenseCreate() {
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('expense.description')}</label>
-          <textarea
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Textarea
             rows={4}
             placeholder={t('expense.descriptionPlaceholder')}
             value={description}
@@ -128,8 +129,7 @@ export default function ExpenseCreate() {
 
         <div>
           <label className="block text-sm font-medium mb-1">{t('expense.attachmentUrls')}</label>
-          <textarea
-            className="w-full border rounded px-3 py-2 text-sm"
+          <Textarea
             rows={3}
             placeholder={t('expense.attachmentUrlsPlaceholder')}
             value={attachmentUrls}
@@ -138,26 +138,15 @@ export default function ExpenseCreate() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
-            className="px-4 py-2 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSaveDraft}
-          >
+          <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>
             {saving ? t('common.saving') : t('expense.saveDraft')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            disabled={saving}
-            onClick={handleSubmit}
-          >
+          </Button>
+          <Button disabled={saving} onClick={handleSubmit}>
             {saving ? t('common.processing') : t('expense.submitApproval')}
-          </button>
-          <button
-            className="px-4 py-2 text-sm text-gray-500 hover:underline"
-            onClick={() => navigate('/expenses')}
-          >
+          </Button>
+          <Button variant="link" className="h-auto p-0" onClick={() => navigate('/expenses')}>
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

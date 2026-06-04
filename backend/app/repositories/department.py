@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -34,6 +34,12 @@ class DepartmentRepository:
         await self.session.flush()
         await self.session.refresh(dept)
         return dept
+
+    async def count_all(self) -> int:
+        result = await self.session.execute(
+            select(func.count(Department.id))
+        )
+        return result.scalar() or 0
 
     async def delete(self, dept: Department) -> None:
         await self.session.delete(dept)

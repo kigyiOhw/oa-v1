@@ -6,6 +6,7 @@ import PermissionGuard from './components/PermissionGuard'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import NotificationBell from './components/NotificationBell'
 import { useThemeStore } from './stores/theme'
+import { useAuthStore } from './stores/auth'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -50,6 +51,7 @@ import AuditLogs from './pages/admin/AuditLogs'
 
 function App() {
   const { mode, color, gradient, imageUrl } = useThemeStore()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const bgStyle: React.CSSProperties =
     mode === 'color'
@@ -274,7 +276,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ThemeSwitcher />
-        <NotificationBell />
+        {isAuthenticated && <NotificationBell />}
       </div>
     </ErrorBoundary>
   )

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { workflowApi, InstanceItem } from '../../api/workflow'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 export default function MyInstances() {
   const { t } = useTranslation()
@@ -46,58 +48,50 @@ export default function MyInstances() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
       <h1 className="text-2xl font-bold mb-6">{t('workflow.myInstances')}</h1>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">{t('workflow.title')}</th>
-            <th className="px-3 py-2 text-left">{t('workflow.workflow')}</th>
-            <th className="px-3 py-2 text-left">{t('workflow.status')}</th>
-            <th className="px-3 py-2 text-left">{t('workflow.created')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('workflow.title')}</TableHead>
+            <TableHead>{t('workflow.workflow')}</TableHead>
+            <TableHead>{t('workflow.status')}</TableHead>
+            <TableHead>{t('workflow.created')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {instances.map((i) => (
-            <tr key={i.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">
+            <TableRow key={i.id}>
+              <TableCell>
                 <Link to={`/workflow/instances/${i.id}`} className="text-blue-600 hover:underline font-medium">
                   {i.title}
                 </Link>
-              </td>
-              <td className="px-3 py-2 text-gray-600">{i.workflow_def?.name || '-'}</td>
-              <td className={`px-3 py-2 font-medium ${statusColor(i.status)}`}>
+              </TableCell>
+              <TableCell className="text-gray-600">{i.workflow_def?.name || '-'}</TableCell>
+              <TableCell className={`font-medium ${statusColor(i.status)}`}>
                 {statusLabel(i.status)}
-              </td>
-              <td className="px-3 py-2 text-gray-500">{new Date(i.created_at).toLocaleString()}</td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-gray-500">{new Date(i.created_at).toLocaleString()}</TableCell>
+            </TableRow>
           ))}
           {instances.length === 0 && (
-            <tr>
-              <td colSpan={4} className="px-3 py-8 text-center text-gray-400">
+            <TableRow>
+              <TableCell colSpan={4} className="text-center text-gray-400 py-8">
                 {t('workflow.noInstances')}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
             {t('common.prev')}
-          </button>
+          </Button>
           <span className="px-3 py-1 text-sm text-gray-600">
             {page} / {totalPages}
           </span>
-          <button
-            className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-          >
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
             {t('common.next')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-12 complete: auth, RBAC with role types (super_admin/module_admin/dept_admin/user), workflow engine, company portal, leave requests, WebSocket notifications, employee profiles with onboarding/resignation, asset/consumable management, department-scoped data isolation, attendance with check-in/out + team view, notification center with bell + persistent storage, contacts directory with department tree + search, expense reimbursement + overtime request modules with leave conflict validation, audit logging (automatic via SQLAlchemy after_flush events + contextvars, zero-intrusion to existing code). Currently in **Phase 13** (data dashboards).
+Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-15 complete. Phase 16 planned: skeleton loading + empty states + animations + dark mode + recharts visualization. Phase 17: internal messaging + refinements. See PLAN.md for details.
 
 ## Common Commands
 

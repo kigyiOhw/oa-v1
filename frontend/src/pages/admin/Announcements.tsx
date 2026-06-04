@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useTranslation } from 'react-i18next'
 import { announcementApi, Announcement } from '../../api/announcement'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function Announcements() {
   const { t } = useTranslation()
@@ -33,54 +37,52 @@ export default function Announcements() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{t('announcements.title')}</h1>
-        <button
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-          onClick={() => setShowCreate(true)}
-        >
+        <Button size="sm" onClick={() => setShowCreate(true)}>
           {t('announcements.createAnnouncement')}
-        </button>
+        </Button>
       </div>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-3 py-2 text-left">ID</th>
-            <th className="px-3 py-2 text-left">{t('announcements.title')}</th>
-            <th className="px-3 py-2 text-left">{t('announcements.status')}</th>
-            <th className="px-3 py-2 text-left">{t('workflow.created')}</th>
-            <th className="px-3 py-2 text-left">{t('common.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>{t('announcements.title')}</TableHead>
+            <TableHead>{t('announcements.status')}</TableHead>
+            <TableHead>{t('workflow.created')}</TableHead>
+            <TableHead>{t('common.actions')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {anns.map((a) => (
-            <tr key={a.id} className="border-t hover:bg-gray-50">
-              <td className="px-3 py-2">{a.id}</td>
-              <td className="px-3 py-2 font-medium">
+            <TableRow key={a.id}>
+              <TableCell>{a.id}</TableCell>
+              <TableCell className="font-medium">
                 {a.is_pinned && <span className="text-xs bg-red-100 text-red-600 px-1 rounded mr-1">{t('announcements.pinned')}</span>}
                 {a.title}
-              </td>
-              <td className="px-3 py-2">
+              </TableCell>
+              <TableCell>
                 <span className={a.is_published ? 'text-green-600' : 'text-gray-400'}>
                   {a.is_published ? t('announcements.published') : t('announcements.draft')}
                 </span>
-              </td>
-              <td className="px-3 py-2 text-gray-400">{new Date(a.created_at).toLocaleDateString()}</td>
-              <td className="px-3 py-2 space-x-2">
-                <button className="text-blue-600 hover:underline text-xs" onClick={() => setEditing(a)}>{t('common.edit')}</button>
-                <button className="text-red-500 hover:underline text-xs" onClick={() => handleDelete(a.id)}>{t('common.delete')}</button>
-              </td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-gray-400">{new Date(a.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="space-x-2">
+                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditing(a)}>{t('common.edit')}</Button>
+                <Button variant="link" size="sm" className="h-auto p-0 text-red-500" onClick={() => handleDelete(a.id)}>{t('common.delete')}</Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       <div className="flex justify-center gap-2 mt-4">
         {Array.from({ length: Math.ceil(total / 10) }, (_, i) => (
-          <button
+          <Button
             key={i}
-            className={`px-3 py-1 rounded text-sm ${page === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            variant={page === i + 1 ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setPage(i + 1)}
           >
             {i + 1}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -135,7 +137,7 @@ function AnnFormModal({
         {error && <div className="mb-3 text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
         <label className="block mb-2 text-sm">
           {t('announcements.title')}
-          <input className="block w-full border rounded px-2 py-1 mt-0.5" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input className="mt-0.5" value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <div className="flex gap-2 mb-2">
           <label className="flex items-center gap-1 text-sm">
@@ -144,9 +146,9 @@ function AnnFormModal({
           <label className="flex items-center gap-1 text-sm">
             <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} /> {t('announcements.published')}
           </label>
-          <button type="button" className="text-xs text-blue-600 underline ml-auto" onClick={() => setPreview(!preview)}>
+          <Button variant="link" size="sm" className="h-auto p-0 ml-auto" onClick={() => setPreview(!preview)}>
             {preview ? t('common.edit') : t('announcements.preview')}
-          </button>
+          </Button>
         </div>
         {preview ? (
           <div className="border rounded p-3 mb-4 min-h-[200px] prose prose-sm max-w-none">
@@ -155,23 +157,14 @@ function AnnFormModal({
         ) : (
           <label className="block mb-4 text-sm">
             {t('announcements.content')}
-            <textarea
-              className="block w-full border rounded px-2 py-1 mt-0.5 font-mono text-xs"
-              rows={14}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            <Textarea className="mt-0.5 font-mono text-xs" rows={14} value={content} onChange={(e) => setContent(e.target.value)} />
           </label>
         )}
         <div className="flex gap-2">
-          <button
-            className="flex-1 bg-blue-600 text-white rounded py-1.5 text-sm disabled:opacity-50"
-            onClick={handleSave}
-            disabled={saving || !title.trim() || !content.trim()}
-          >
+          <Button className="flex-1" onClick={handleSave} disabled={saving || !title.trim() || !content.trim()}>
             {saving ? t('common.saving') : t('common.save')}
-          </button>
-          <button className="flex-1 border rounded py-1.5 text-sm" onClick={onClose}>{t('common.cancel')}</button>
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
         </div>
       </div>
     </div>
