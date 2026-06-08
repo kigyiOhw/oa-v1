@@ -7,6 +7,7 @@ import { userApi, type UserItem } from '../../api/users'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function AssetDetail() {
   const { t } = useTranslation()
@@ -62,7 +63,13 @@ export default function AssetDetail() {
     } finally { setSaving(false) }
   }
 
-  if (loading) return <div className="p-6 text-center text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="p-6 space-y-4 max-w-2xl">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-lg" />
+    </div>
+  )
   if (!asset) return <div className="p-6 text-center text-red-500">{error}</div>
 
   const user = asset.current_user as Record<string, unknown> | null

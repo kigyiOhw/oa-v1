@@ -25,6 +25,7 @@ from app.api.v1.expense import router as expense_router
 from app.api.v1.leave import router as leave_router
 from app.api.v1.overtime import router as overtime_router
 from app.api.v1.media import router as media_router
+from app.api.v1.messages import router as messages_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.permissions import router as permissions_router
 from app.api.v1.roles import router as roles_router
@@ -43,10 +44,49 @@ from app.db.base import engine
 logger = logging.getLogger(__name__)
 
 
+def _register_workflow_hooks() -> None:
+    """Register workflow completion hooks (replaces hardcoded engine branches)."""
+    from sqlalchemy import select as sa_select
+
+    from app.models.expense_request import ExpenseRequest
+    from app.models.leave_request import LeaveRequest
+    from app.models.overtime_request import OvertimeRequest
+    from app.services.workflow.hooks import register_hook
+
+    async def leave_hook(session, instance):
+        from app.services.leave import LeaveService
+        leave = (await session.execute(
+            sa_select(LeaveRequest).where(LeaveRequest.workflow_instance_id == instance.id)
+        )).scalar_one_or_none()
+        if leave:
+            await LeaveService(session).sync_status(leave)
+
+    async def expense_hook(session, instance):
+        from app.services.expense import ExpenseService
+        expense = (await session.execute(
+            sa_select(ExpenseRequest).where(ExpenseRequest.workflow_instance_id == instance.id)
+        )).scalar_one_or_none()
+        if expense:
+            await ExpenseService(session).sync_status(expense)
+
+    async def overtime_hook(session, instance):
+        from app.services.overtime import OvertimeService
+        overtime = (await session.execute(
+            sa_select(OvertimeRequest).where(OvertimeRequest.workflow_instance_id == instance.id)
+        )).scalar_one_or_none()
+        if overtime:
+            await OvertimeService(session).sync_status(overtime)
+
+    register_hook("leave.sync_status", leave_hook)
+    register_hook("expense.sync_status", expense_hook)
+    register_hook("overtime.sync_status", overtime_hook)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> typing.AsyncGenerator[None, None]:
     setup_logging(log_level="DEBUG" if settings.DEBUG else "INFO")
     register_audit_listener()
+    _register_workflow_hooks()
     logger.info("=" * 50)
     logger.info("Application starting up | name=%s debug=%s", settings.APP_NAME, settings.DEBUG)
     logger.info("Database URL: %s", settings.DATABASE_URL.replace("://", "://***@"))
@@ -69,7 +109,7 @@ app.add_exception_handler(OAException, oa_exception_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5307"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,6 +155,7 @@ app.include_router(asset_categories_router, prefix="/api/v1")
 app.include_router(asset_router, prefix="/api/v1")
 app.include_router(consumables_router, prefix="/api/v1")
 app.include_router(contacts_router, prefix="/api/v1")
+app.include_router(messages_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(leave_router, prefix="/api/v1")
 app.include_router(media_router, prefix="/api/v1")

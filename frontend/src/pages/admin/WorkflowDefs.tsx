@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { workflowDefApi, DefinitionItem } from '../../api/workflow'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function WorkflowDefs() {
   const { t } = useTranslation()
+  const toast = useToast()
   const [defs, setDefs] = useState<DefinitionItem[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<DefinitionItem | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const fetchDefs = async () => {
-    const res = await workflowDefApi.list()
-    setDefs(res.data)
+    try {
+      const res = await workflowDefApi.list()
+      setDefs(res.data)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -27,7 +35,7 @@ export default function WorkflowDefs() {
       await workflowDefApi.delete(id)
       fetchDefs()
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Delete failed')
+      toast.error(e.response?.data?.detail || 'Delete failed')
     }
   }
 
@@ -51,7 +59,25 @@ export default function WorkflowDefs() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {defs.map((d) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              </TableRow>
+            ))
+          ) : defs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6}>
+                <EmptyState title={t('common.noData')} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            defs.map((d) => (
             <TableRow key={d.id}>
               <TableCell>{d.id}</TableCell>
               <TableCell className="font-medium">{d.name}</TableCell>
@@ -71,7 +97,7 @@ export default function WorkflowDefs() {
                 </Button>
               </TableCell>
             </TableRow>
-          ))}
+          )))}
         </TableBody>
       </Table>
 

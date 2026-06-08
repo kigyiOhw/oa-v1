@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, DBDep
 from app.schemas.notification import NotificationOut, PaginatedNotifications, UnreadCountOut
@@ -56,6 +56,20 @@ async def mark_read(
     service = NotificationService(db)
     notif = await service.mark_read(notification_id, current_user)
     return NotificationOut.model_validate(notif)
+
+
+@router.delete("/{notification_id}", status_code=204)
+async def delete_notification(
+    notification_id: int,
+    db: DBDep,
+    current_user: CurrentUser,
+) -> None:
+    logger.info(
+        "----------notifications.delete, user_id=%s, notif_id=%s",
+        current_user.id, notification_id,
+    )
+    service = NotificationService(db)
+    await service.delete(notification_id, current_user)
 
 
 @router.post("/read-all", response_model=UnreadCountOut)

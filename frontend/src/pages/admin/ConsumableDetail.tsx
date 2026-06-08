@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ConsumableDetail() {
   const { t } = useTranslation()
@@ -88,7 +89,13 @@ export default function ConsumableDetail() {
     finally { setSaving(false) }
   }
 
-  if (loading) return <div className="p-6 text-center text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="p-6 space-y-4 max-w-2xl">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-lg" />
+    </div>
+  )
   if (!item && !isCreate) return <div className="p-6 text-center text-red-500">Not found</div>
 
   // Edit/Create form

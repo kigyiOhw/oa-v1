@@ -18,6 +18,7 @@ class LeaveRequest(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     duration_days: Mapped[float] = mapped_column(Numeric(3, 1), nullable=False)
+    half_day: Mapped[str | None] = mapped_column(String(2), nullable=True)  # "am" or "pm"
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

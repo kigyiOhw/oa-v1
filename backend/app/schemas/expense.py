@@ -5,14 +5,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ExpenseCreate(BaseModel):
     expense_type: str = Field(..., min_length=1, max_length=20)
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., gt=0, le=1_000_000)
     description: str = Field(..., min_length=1, max_length=2000)
     attachment_urls: list[str] | None = None
 
 
 class ExpenseUpdate(BaseModel):
     expense_type: str | None = Field(None, max_length=20)
-    amount: float | None = Field(None, gt=0)
+    amount: float | None = Field(None, gt=0, le=1_000_000)
     description: str | None = Field(None, max_length=2000)
     attachment_urls: list[str] | None = None
 

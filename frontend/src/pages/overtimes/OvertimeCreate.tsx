@@ -5,6 +5,7 @@ import { overtimeApi } from '../../api/overtime'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import FormField from '@/components/ui/form-field'
 
 function toLocalDatetimeString(iso: string): string {
   if (!iso) return ''
@@ -25,6 +26,7 @@ export default function OvertimeCreate() {
   const [durationHours, setDurationHours] = useState('')
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!id) return
@@ -48,19 +50,29 @@ export default function OvertimeCreate() {
     }
   }, [startTime, endTime])
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!startTime) errs.startTime = t('validation.required')
+    if (!endTime) errs.endTime = t('validation.required')
+    if (startTime && endTime && new Date(endTime) <= new Date(startTime))
+      errs.endTime = t('validation.endTimeBeforeStart')
+    if (!reason.trim()) errs.reason = t('validation.required')
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const getPayload = () => ({
+    start_time: new Date(startTime).toISOString(),
+    end_time: new Date(endTime).toISOString(),
+    duration_hours: parseFloat(durationHours),
+    reason: reason.trim(),
+  })
+
   const handleSaveDraft = async () => {
-    if (!startTime || !endTime || !reason) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
-      const data = {
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        duration_hours: parseFloat(durationHours),
-        reason,
-      }
+      const data = getPayload()
       if (isEdit) {
         await overtimeApi.update(Number(id), data)
       } else {
@@ -72,18 +84,10 @@ export default function OvertimeCreate() {
   }
 
   const handleSubmit = async () => {
-    if (!startTime || !endTime || !reason) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
-      const data = {
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        duration_hours: parseFloat(durationHours),
-        reason,
-      }
+      const data = getPayload()
       let overtimeId = Number(id)
       if (isEdit) {
         await overtimeApi.update(Number(id), data)
@@ -104,43 +108,39 @@ export default function OvertimeCreate() {
 
       <div className="bg-white rounded-lg border p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('overtime.startTime')}</label>
+          <FormField label={t('overtime.startTime')} error={errors.startTime} required>
             <Input
               type="datetime-local"
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => { setStartTime(e.target.value); setErrors((p) => { const n = {...p}; delete n.startTime; delete n.endTime; return n }) }}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('overtime.endTime')}</label>
+          </FormField>
+          <FormField label={t('overtime.endTime')} error={errors.endTime} required>
             <Input
               type="datetime-local"
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
+              onChange={(e) => { setEndTime(e.target.value); setErrors((p) => { const n = {...p}; delete n.endTime; return n }) }}
             />
-          </div>
+          </FormField>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('overtime.duration')}</label>
+        <FormField label={t('overtime.duration')}>
           <Input
             type="text"
             value={`${durationHours} hours`}
             readOnly
             className="bg-gray-50"
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('overtime.reason')}</label>
+        <FormField label={t('overtime.reason')} error={errors.reason} required>
           <Textarea
             rows={4}
             placeholder={t('overtime.reasonPlaceholder')}
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => { setReason(e.target.value); setErrors((p) => { const n = {...p}; delete n.reason; return n }) }}
           />
-        </div>
+        </FormField>
 
         <div className="flex gap-3 pt-2">
           <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>

@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
 from app.models.employee import EmployeeProfile
+from sqlalchemy import text
+
 from app.models.user import Role, User
 from app.repositories.user import UserRepository
 from app.schemas.auth import LoginRequest, UserCreate
@@ -47,9 +49,19 @@ class AuthService:
 
         # Assign default "user" role
         logger.info("----------AuthService.register, assigning_default_role, user_id=%s", user.id)
-        user_role = (await self.session.execute(select(Role).where(Role.name == "user"))).scalar_one_or_none()
+        result = await self.session.execute(text("SELECT id, name, description, role_type, admin_scope, created_at FROM roles WHERE name = :name"), {"name": "user"})
+        row = result.fetchone()
+        user_role = None
+        if row:
+            user_role = Role(
+                id=row.id, name=row.name, description=row.description,
+                role_type=row.role_type, admin_scope=row.admin_scope, created_at=row.created_at,
+            )
         if user_role:
-            user.roles.append(user_role)
+            await self.session.execute(
+                text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)"),
+                {"user_id": user.id, "role_id": user_role.id},
+            )
             await self.session.flush()
             logger.info("----------AuthService.register, role_assigned, user_id=%s, role=%s", user.id, user_role.name)
         else:

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -5,6 +6,7 @@ import AdminLayout from './components/AdminLayout'
 import PermissionGuard from './components/PermissionGuard'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import NotificationBell from './components/NotificationBell'
+import { ToastContainer } from './components/ui/toast'
 import { useThemeStore } from './stores/theme'
 import { useAuthStore } from './stores/auth'
 import Login from './pages/Login'
@@ -48,23 +50,34 @@ import MyOvertimes from './pages/overtimes/MyOvertimes'
 import OvertimeCreate from './pages/overtimes/OvertimeCreate'
 import OvertimeDetail from './pages/overtimes/OvertimeDetail'
 import AuditLogs from './pages/admin/AuditLogs'
+import MessagesPage from './pages/messages/MessagesPage'
+import MessageDetail from './pages/messages/MessageDetail'
+import MessageCompose from './pages/messages/MessageCompose'
 
 function App() {
-  const { mode, color, gradient, imageUrl } = useThemeStore()
+  const { mode, color, gradient, imageUrl, darkMode } = useThemeStore()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode)
+  }, [darkMode])
+
+  const isDefaultBg = mode === 'color' && color === '#f9fafb'
+
   const bgStyle: React.CSSProperties =
-    mode === 'color'
-      ? { backgroundColor: color }
-      : mode === 'gradient'
-        ? { backgroundImage: gradient }
-        : imageUrl
-          ? { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
-          : { backgroundColor: '#f9fafb' }
+    isDefaultBg
+      ? {}
+      : mode === 'color'
+        ? { backgroundColor: color }
+        : mode === 'gradient'
+          ? { backgroundImage: gradient }
+          : imageUrl
+            ? { backgroundImage: `url(${imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
+            : {}
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen" style={bgStyle}>
+      <div className="min-h-screen bg-background text-foreground" style={bgStyle}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
@@ -273,10 +286,15 @@ function App() {
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
 
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/messages/new" element={<ProtectedRoute><MessageCompose /></ProtectedRoute>} />
+          <Route path="/messages/:id" element={<ProtectedRoute><MessageDetail /></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ThemeSwitcher />
         {isAuthenticated && <NotificationBell />}
+        <ToastContainer />
       </div>
     </ErrorBoundary>
   )

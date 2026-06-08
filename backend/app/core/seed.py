@@ -26,11 +26,11 @@ DEFAULT_COMPANY_INFO = json.dumps({
 })
 
 DEFAULT_QUICK_LINKS = json.dumps([
-    {"name": "OA 门户", "url": "http://localhost:5173", "icon": "home"},
-    {"name": "知识库", "url": "http://localhost:5173", "icon": "book"},
-    {"name": "文件共享", "url": "http://localhost:5173", "icon": "file"},
-    {"name": "会议预约", "url": "http://localhost:5173", "icon": "calendar"},
-    {"name": "数据报表", "url": "http://localhost:5173", "icon": "chart"},
+    {"name": "OA 门户", "url": "http://localhost:5307", "icon": "home"},
+    {"name": "知识库", "url": "http://localhost:5307", "icon": "book"},
+    {"name": "文件共享", "url": "http://localhost:5307", "icon": "file"},
+    {"name": "会议预约", "url": "http://localhost:5307", "icon": "calendar"},
+    {"name": "数据报表", "url": "http://localhost:5307", "icon": "chart"},
 ])
 
 
@@ -220,6 +220,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             name="Leave Approval",
             description="Standard leave approval: submit → manager review",
             icon="calendar",
+            on_complete_hook="leave.sync_status",
             definition={
                 "nodes": [
                     {"id": "start", "type": "start", "label": "Submit"},
@@ -243,6 +244,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             name="Expense Approval",
             description="Expense reimbursement approval: submit → admin review",
             icon="receipt",
+            on_complete_hook="expense.sync_status",
             definition={
                 "nodes": [
                     {"id": "start", "type": "start", "label": "Submit"},
@@ -266,6 +268,7 @@ async def seed_initial_data(db: AsyncSession) -> None:
             name="Overtime Approval",
             description="Overtime request approval: submit → admin review",
             icon="clock",
+            on_complete_hook="overtime.sync_status",
             definition={
                 "nodes": [
                     {"id": "start", "type": "start", "label": "Submit"},
@@ -294,28 +297,28 @@ async def seed_initial_data(db: AsyncSession) -> None:
 
 
 def _seed_asset_categories(db: AsyncSession) -> None:
-    def _add(parent: AssetCategory | None, name: str, *child_names: str) -> AssetCategory:
-        cat = AssetCategory(name=name, parent=parent, sort_order=0)
+    def _add(parent: AssetCategory | None, name: str, *child_names: str, code_prefix: str | None = None) -> AssetCategory:
+        cat = AssetCategory(name=name, parent=parent, sort_order=0, code_prefix=code_prefix)
         db.add(cat)
         for cn in child_names:
             _add(cat, cn)
         return cat
 
-    electronics = _add(None, "电子设备")
+    electronics = _add(None, "电子设备", code_prefix="IT")
     _add(electronics, "电脑", "笔记本", "台式机", "服务器")
     _add(electronics, "打印机")
 
-    furniture = _add(None, "办公家具")
+    furniture = _add(None, "办公家具", code_prefix="FUR")
     _add(furniture, "办公桌")
     _add(furniture, "办公椅")
     _add(furniture, "文件柜")
 
-    supplies = _add(None, "耗材")
+    supplies = _add(None, "耗材", code_prefix="SUP")
     _add(supplies, "纸张")
     _add(supplies, "墨盒/硒鼓")
     _add(supplies, "文具")
 
-    living = _add(None, "生活设备")
+    living = _add(None, "生活设备", code_prefix="LIV")
     _add(living, "饮水机")
     _add(living, "微波炉")
 

@@ -25,9 +25,13 @@ class NotificationService:
         return await self.repo.get_unread_count(user.id)
 
     async def mark_read(self, notification_id: int, user: User) -> Notification:
-        notif = await self.repo.mark_read(notification_id, user.id)
+        # Verify ownership first
+        notif = await self.repo.get_by_id(notification_id)
         if not notif:
             raise OAException("Notification not found", status_code=404)
+        if notif.user_id != user.id:
+            raise OAException("Access denied", status_code=403)
+        notif = await self.repo.mark_read(notification_id)
         await self.session.commit()
         return notif
 
@@ -35,6 +39,15 @@ class NotificationService:
         count = await self.repo.mark_all_read(user.id)
         await self.session.commit()
         return count
+
+    async def delete(self, notification_id: int, user: User) -> None:
+        notif = await self.repo.get_by_id(notification_id)
+        if not notif:
+            raise OAException("Notification not found", status_code=404)
+        if notif.user_id != user.id:
+            raise OAException("Access denied", status_code=403)
+        await self.repo.delete(notif)
+        await self.session.commit()
 
     @staticmethod
     async def send_notification(

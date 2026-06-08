@@ -5,14 +5,19 @@ import { ArrowLeft } from 'lucide-react'
 import { leaveApi, LeaveItem, leaveTypeLabel, leaveStatusColor } from '../../api/leave'
 import { workflowApi, HistoryItem } from '../../api/workflow'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToast } from '@/components/ui/toast'
 
 export default function LeaveDetail() {
   const { t } = useTranslation()
+  const toast = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [leave, setLeave] = useState<LeaveItem | null>(null)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchLeave = async () => {
     try {
@@ -23,7 +28,7 @@ export default function LeaveDetail() {
         setHistory(instRes.data.history || [])
       }
     } catch {
-      alert(t('leave.notFound'))
+      toast.error(t('leave.notFound'))
       navigate('/leaves')
     } finally {
       setLoading(false)
@@ -34,15 +39,27 @@ export default function LeaveDetail() {
     fetchLeave()
   }, [id])
 
-  const handleCancel = async () => {
-    if (!confirm(t('leave.cancelConfirm'))) return
-    try {
-      await leaveApi.cancel(Number(id))
-      fetchLeave()
-    } catch { /* handled by axios interceptor */ }
+  const handleCancel = () => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('leave.cancelConfirm'),
+      onConfirm: async () => {
+        try {
+          await leaveApi.cancel(Number(id))
+          fetchLeave()
+        } catch { /* handled by axios interceptor */ }
+      },
+    })
   }
 
-  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-64 w-full rounded-lg" />
+      <Skeleton className="h-32 w-full rounded-lg" />
+    </div>
+  )
   if (!leave) return null
 
   return (
@@ -130,6 +147,16 @@ export default function LeaveDetail() {
           </div>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

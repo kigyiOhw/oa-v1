@@ -34,6 +34,16 @@
     "saveFailed": "Save failed",
     "requiredFields": "Please fill in all required fields"
   },
+  "validation": {
+    "required": "This field is required",
+    "minLength": "Minimum {n} characters",
+    "maxLength": "Maximum {n} characters",
+    "min": "Minimum value is {n}",
+    "max": "Maximum value is {n}",
+    "invalidFormat": "Invalid format",
+    "endDateBeforeStart": "End date must be after start date",
+    "endTimeBeforeStart": "End time must be after start time"
+  },
   "auth": {
     "login": "Login",
     "register": "Register",
@@ -98,6 +108,12 @@
       "noImages": "No images yet — admin can upload photos in Media Management",
       "noAnnouncements": "No announcements — admin can publish notices in Announcement Management",
       "noLinks": "No links — admin can configure links in Company Settings"
+    },
+    "charts": {
+      "leaveTypeDistribution": "Leave Type Distribution",
+      "assetStatusDistribution": "Asset Status Distribution",
+      "usersByDepartment": "Users by Department",
+      "attendanceOverview": "Attendance Overview"
     }
   },
   "admin": {
@@ -140,7 +156,19 @@
     "stepType": "Type",
     "stepScope": "Scope",
     "stepName": "Name",
-    "dataScope": "Data Scope"
+    "dataScope": "Data Scope",
+    "typeLabels": {
+      "super_admin": "Super Admin",
+      "module_admin": "Module Admin",
+      "dept_admin": "Dept Admin",
+      "user": "User"
+    },
+    "typeDescriptions": {
+      "super_admin": "Full access to all modules and departments",
+      "module_admin": "Manage specific modules, global or department scope",
+      "dept_admin": "Manage own department: employees, assets, consumables",
+      "user": "Personal data and self-service only"
+    }
   },
   "departments": {
     "title": "Departments",
@@ -174,6 +202,8 @@
     "content": "Content (Markdown)",
     "status": "Status",
     "pinned": "Pinned",
+    "showMore": "Show more (+{{count}})",
+    "showLess": "Show less",
     "published": "Published",
     "draft": "Draft",
     "preview": "Preview",
@@ -229,6 +259,8 @@
     "confirmApprove": "Confirm approve?",
     "confirmReject": "Confirm reject?",
     "cancelConfirm": "Cancel this workflow instance?",
+    "flowchart": "Flowchart",
+    "noDefinition": "Workflow definition not available",
     "statusLabels": {
       "pending": "Pending",
       "approved": "Approved",
@@ -340,7 +372,9 @@
     "customColor": "Custom Color",
     "customUrl": "Image URL",
     "apply": "Apply",
-    "reset": "Reset to Default"
+    "reset": "Reset to Default",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode"
   },
   "asset": {
     "title": "Asset Management",
@@ -495,6 +529,33 @@
     "endDate": "End Date",
     "records": "records"
   },
+  "messages": {
+    "title": "Messages",
+    "inbox": "Inbox",
+    "sent": "Sent",
+    "compose": "Compose",
+    "subject": "Subject",
+    "body": "Message",
+    "recipient": "Recipient",
+    "send": "Send",
+    "noMessages": "No messages",
+    "notFound": "Message not found",
+    "from": "From",
+    "to": "To",
+    "date": "Date",
+    "status": "Status",
+    "read": "Read",
+    "unread": "Unread",
+    "readAt": "Read at",
+    "notReadYet": "Not read yet",
+    "deleteConfirm": "Delete this message?",
+    "reply": "Reply",
+    "searchUser": "Search user...",
+    "backToMessages": "Back to Messages",
+    "recipientRequired": "Please select a recipient",
+    "subjectRequired": "Please enter a subject",
+    "bodyRequired": "Please enter a message"
+  },
   "overtime": {
     "myOvertimes": "My Overtime Requests",
     "newOvertime": "New Overtime Request",
@@ -526,5 +587,10 @@
       "rejected": "Rejected",
       "cancelled": "Cancelled"
     }
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred. Please try again.",
+    "reload": "Reload page"
   }
 }

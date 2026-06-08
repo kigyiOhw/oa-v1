@@ -34,6 +34,16 @@
     "saveFailed": "保存失败",
     "requiredFields": "请填写所有必填项"
   },
+  "validation": {
+    "required": "此字段为必填项",
+    "minLength": "最少 {n} 个字符",
+    "maxLength": "最多 {n} 个字符",
+    "min": "最小值是 {n}",
+    "max": "最大值是 {n}",
+    "invalidFormat": "格式不正确",
+    "endDateBeforeStart": "结束日期必须在开始日期之后",
+    "endTimeBeforeStart": "结束时间必须在开始时间之后"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",
@@ -98,6 +108,12 @@
       "noImages": "暂无图片 — 管理员可在后台\"媒体管理\"中上传公司活动照片",
       "noAnnouncements": "暂无公告 — 管理员可在后台\"公告管理\"中发布公司通知",
       "noLinks": "暂无链接 — 管理员可在后台\"公司设置\"中配置内网导航"
+    },
+    "charts": {
+      "leaveTypeDistribution": "请假类型分布",
+      "assetStatusDistribution": "资产状态分布",
+      "usersByDepartment": "各部门人数",
+      "attendanceOverview": "考勤概览"
     }
   },
   "admin": {
@@ -140,7 +156,19 @@
     "stepType": "类型",
     "stepScope": "范围",
     "stepName": "命名",
-    "dataScope": "数据范围"
+    "dataScope": "数据范围",
+    "typeLabels": {
+      "super_admin": "超级管理员",
+      "module_admin": "模块管理员",
+      "dept_admin": "部门管理员",
+      "user": "普通用户"
+    },
+    "typeDescriptions": {
+      "super_admin": "全部模块和部门完全访问",
+      "module_admin": "管理指定模块，全局或部门范围",
+      "dept_admin": "管理部门：员工、资产、耗材",
+      "user": "个人数据与自助服务"
+    }
   },
   "departments": {
     "title": "部门管理",
@@ -174,6 +202,8 @@
     "content": "内容 (Markdown)",
     "status": "状态",
     "pinned": "置顶",
+    "showMore": "展开更多 (+{{count}})",
+    "showLess": "收起",
     "published": "已发布",
     "draft": "草稿",
     "preview": "预览",
@@ -229,6 +259,8 @@
     "confirmApprove": "确认同意？",
     "confirmReject": "确认驳回？",
     "cancelConfirm": "确定撤销此流程？",
+    "flowchart": "流程图",
+    "noDefinition": "流程定义不可用",
     "statusLabels": {
       "pending": "审批中",
       "approved": "已通过",
@@ -340,7 +372,9 @@
     "customColor": "自定义颜色",
     "customUrl": "图片链接",
     "apply": "应用",
-    "reset": "恢复默认"
+    "reset": "恢复默认",
+    "darkMode": "深色模式",
+    "lightMode": "浅色模式"
   },
   "asset": {
     "title": "资产管理",
@@ -495,6 +529,33 @@
     "endDate": "结束日期",
     "records": "条"
   },
+  "messages": {
+    "title": "站内信",
+    "inbox": "收件箱",
+    "sent": "已发送",
+    "compose": "写消息",
+    "subject": "主题",
+    "body": "内容",
+    "recipient": "收件人",
+    "send": "发送",
+    "noMessages": "暂无消息",
+    "notFound": "消息未找到",
+    "from": "发件人",
+    "to": "收件人",
+    "date": "日期",
+    "status": "状态",
+    "read": "已读",
+    "unread": "未读",
+    "readAt": "已读于",
+    "notReadYet": "未读",
+    "deleteConfirm": "确定删除此消息？",
+    "reply": "回复",
+    "searchUser": "搜索用户...",
+    "backToMessages": "返回站内信",
+    "recipientRequired": "请选择收件人",
+    "subjectRequired": "请输入主题",
+    "bodyRequired": "请输入消息内容"
+  },
   "overtime": {
     "myOvertimes": "我的加班",
     "newOvertime": "新建加班",
@@ -526,5 +587,10 @@
       "rejected": "已驳回",
       "cancelled": "已取消"
     }
+  },
+  "errorBoundary": {
+    "title": "出错了",
+    "message": "页面发生异常，请刷新重试",
+    "reload": "刷新页面"
   }
 }

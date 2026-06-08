@@ -17,6 +17,8 @@ class OvertimeRequest(Base):
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_hours: Mapped[float] = mapped_column(Numeric(4, 1), nullable=False)
+    actual_start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    actual_end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

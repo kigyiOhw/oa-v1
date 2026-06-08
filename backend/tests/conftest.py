@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import AsyncGenerator
 
@@ -12,7 +13,10 @@ from sqlalchemy.pool import NullPool
 from app.api.deps import get_db
 from app.db.base import Base
 
-TEST_DATABASE_URL = "postgresql+asyncpg://oa:oa_secret@localhost:5433/oa_db_test"
+TEST_DATABASE_URL = os.getenv(
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://oa:oa_secret@localhost:5433/oa_db_test",
+)
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=False, future=True, poolclass=NullPool)
 TestingSessionLocal = async_sessionmaker(

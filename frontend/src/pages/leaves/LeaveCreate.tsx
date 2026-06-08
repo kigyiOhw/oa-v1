@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import FormField from '@/components/ui/form-field'
 
 export default function LeaveCreate() {
   const { t } = useTranslation()
@@ -26,6 +27,7 @@ export default function LeaveCreate() {
   const [durationDays, setDurationDays] = useState(1)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!id) return
@@ -50,29 +52,33 @@ export default function LeaveCreate() {
     }
   }, [startDate, endDate])
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!startDate) errs.startDate = t('validation.required')
+    if (!endDate) errs.endDate = t('validation.required')
+    if (startDate && endDate && new Date(endDate) < new Date(startDate))
+      errs.endDate = t('validation.endDateBeforeStart')
+    if (!reason.trim()) errs.reason = t('validation.required')
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const getPayload = () => ({
+    leave_type: leaveType,
+    start_date: startDate,
+    end_date: endDate,
+    duration_days: durationDays,
+    reason: reason.trim(),
+  })
+
   const handleSaveDraft = async () => {
-    if (!startDate || !endDate || !reason) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
       if (isEdit) {
-        await leaveApi.update(Number(id), {
-          leave_type: leaveType,
-          start_date: startDate,
-          end_date: endDate,
-          duration_days: durationDays,
-          reason,
-        })
+        await leaveApi.update(Number(id), getPayload())
       } else {
-        await leaveApi.create({
-          leave_type: leaveType,
-          start_date: startDate,
-          end_date: endDate,
-          duration_days: durationDays,
-          reason,
-        })
+        await leaveApi.create(getPayload())
       }
       navigate('/leaves')
     } catch { /* handled by axios interceptor */ }
@@ -80,29 +86,14 @@ export default function LeaveCreate() {
   }
 
   const handleSubmit = async () => {
-    if (!startDate || !endDate || !reason) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
       let leaveId = Number(id)
       if (isEdit) {
-        await leaveApi.update(Number(id), {
-          leave_type: leaveType,
-          start_date: startDate,
-          end_date: endDate,
-          duration_days: durationDays,
-          reason,
-        })
+        await leaveApi.update(Number(id), getPayload())
       } else {
-        const res = await leaveApi.create({
-          leave_type: leaveType,
-          start_date: startDate,
-          end_date: endDate,
-          duration_days: durationDays,
-          reason,
-        })
+        const res = await leaveApi.create(getPayload())
         leaveId = res.data.id
       }
       await leaveApi.submit(leaveId)
@@ -117,8 +108,7 @@ export default function LeaveCreate() {
       <h1 className="text-2xl font-bold mb-6">{isEdit ? t('leave.editLeave') : t('leave.newLeave')}</h1>
 
       <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('leave.leaveType')}</label>
+        <FormField label={t('leave.leaveType')}>
           <Select
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
@@ -127,46 +117,42 @@ export default function LeaveCreate() {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Select>
-        </div>
+        </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('leave.startDate')}</label>
+          <FormField label={t('leave.startDate')} error={errors.startDate} required>
             <Input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => { setStartDate(e.target.value); setErrors((p) => { const n = {...p}; delete n.startDate; delete n.endDate; return n }) }}
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('leave.endDate')}</label>
+          </FormField>
+          <FormField label={t('leave.endDate')} error={errors.endDate} required>
             <Input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => { setEndDate(e.target.value); setErrors((p) => { const n = {...p}; delete n.endDate; return n }) }}
             />
-          </div>
+          </FormField>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('leave.duration')}</label>
+        <FormField label={t('leave.duration')}>
           <Input
             type="number"
             value={durationDays}
             min={1}
             onChange={(e) => setDurationDays(Number(e.target.value))}
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('leave.reason')}</label>
+        <FormField label={t('leave.reason')} error={errors.reason} required>
           <Textarea
             rows={4}
             placeholder={t('leave.reasonPlaceholder')}
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => { setReason(e.target.value); setErrors((p) => { const n = {...p}; delete n.reason; return n }) }}
           />
-        </div>
+        </FormField>
 
         <div className="flex gap-3 pt-2">
           <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>

@@ -17,6 +17,11 @@ class OvertimeUpdate(BaseModel):
     reason: str | None = Field(None, max_length=2000)
 
 
+class OvertimeActualUpdate(BaseModel):
+    actual_start_time: datetime | None = None
+    actual_end_time: datetime | None = None
+
+
 class OvertimeOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -26,6 +31,8 @@ class OvertimeOut(BaseModel):
     start_time: datetime
     end_time: datetime
     duration_hours: float
+    actual_start_time: datetime | None = None
+    actual_end_time: datetime | None = None
     reason: str
     status: str
     created_at: datetime

@@ -20,14 +20,6 @@ from app.services.notification import NotificationService
 
 logger = logging.getLogger(__name__)
 
-# Category prefix → code prefix
-CATEGORY_CODE_PREFIX: dict[str, str] = {
-    "电子设备": "IT",
-    "办公家具": "FUR",
-    "生活设备": "LIV",
-}
-
-
 class AssetService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -70,15 +62,17 @@ class AssetService:
 
     # ── Assets ──
 
-    def _resolve_code_prefix(self, category_name: str) -> str:
-        for key, prefix in CATEGORY_CODE_PREFIX.items():
-            if key in category_name:
-                return prefix
+    async def _resolve_code_prefix(self, category_id: int) -> str:
+        """Walk up the category tree to find a code_prefix; fall back to 'AST'."""
+        cat = await self.cat_repo.get_by_id(category_id)
+        while cat:
+            if cat.code_prefix:
+                return cat.code_prefix
+            cat = await self.cat_repo.get_by_id(cat.parent_id) if cat.parent_id else None
         return "AST"
 
     async def _generate_asset_code(self, category_id: int) -> str:
-        cat = await self.cat_repo.get_by_id(category_id)
-        prefix = self._resolve_code_prefix(cat.name if cat else "AST")
+        prefix = await self._resolve_code_prefix(category_id)
         year = date.today().year
         # Use a simple approach: max id + 1 within the same prefix
         max_id = await self.asset_repo.get_max_code_suffix(prefix)

@@ -8,6 +8,7 @@ from app.models.employee import EmployeeProfile
 from app.models.expense_request import ExpenseRequest
 from app.models.leave_request import LeaveRequest
 from app.models.media import MediaFile
+from app.models.message import Message
 from app.models.notification import Notification
 from app.models.overtime_request import OvertimeRequest
 from app.models.setting import Setting
@@ -22,5 +23,5 @@ __all__ = [
     "AttendanceRecord",
     "Consumable", "ConsumableRecord",
     "EmployeeProfile", "ExpenseRequest", "LeaveRequest", "MediaFile",
-    "Notification", "OvertimeRequest", "Setting",
+    "Message", "Notification", "OvertimeRequest", "Setting",
 ]

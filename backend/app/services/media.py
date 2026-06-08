@@ -12,8 +12,19 @@ from app.repositories.media import MediaRepository
 
 logger = logging.getLogger(__name__)
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm", ".mov"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm", ".mov", ".pdf", ".docx", ".xlsx"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+
+VIDEO_EXTS = {".mp4", ".webm", ".mov"}
+DOC_EXTS = {".pdf", ".docx", ".xlsx"}
+
+
+def _file_type(ext: str) -> str:
+    if ext in VIDEO_EXTS:
+        return "video"
+    if ext in DOC_EXTS:
+        return "document"
+    return "image"
 
 
 class MediaService:
@@ -41,11 +52,10 @@ class MediaService:
 
         file_path = await self.storage.upload(file)
 
-        is_video = ext in {".mp4", ".webm", ".mov"}
         media = MediaFile(
             title=file.filename,
             file_path=file_path,
-            file_type="video" if is_video else "image",
+            file_type=_file_type(ext),
             file_size=size,
             mime_type=file.content_type or "application/octet-stream",
             uploaded_by=user.id,

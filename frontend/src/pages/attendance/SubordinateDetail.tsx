@@ -7,6 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const statusBadgeVariant = (status: string): 'success' | 'warning' | 'destructive' | 'secondary' | 'default' => {
   const map: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
@@ -68,7 +69,13 @@ export default function SubordinateDetail() {
   const totalPages = Math.ceil(total / pageSize)
 
   if (loading && !detail) {
-    return <div className="mx-auto max-w-4xl px-4 py-8 text-center text-gray-400">{t('common.loading')}</div>
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </div>
+    )
   }
 
   if (!detail) {

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const EDUCATION_LEVELS = ['high_school', 'associate', 'bachelor', 'master', 'doctor', 'other']
 
@@ -126,7 +127,13 @@ export default function EmployeeDetail() {
     }
   }
 
-  if (loading) return <div className="p-6 text-center text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="p-6 space-y-4 max-w-2xl">
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="h-32 w-full rounded-lg" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+    </div>
+  )
   if (!profile) return <div className="p-6 text-center text-red-500">{error}</div>
 
   const isResigned = profile.employment_status === 'resigned'

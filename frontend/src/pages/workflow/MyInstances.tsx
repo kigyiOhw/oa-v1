@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { workflowApi, InstanceItem } from '../../api/workflow'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function MyInstances() {
   const { t } = useTranslation()
@@ -11,11 +13,15 @@ export default function MyInstances() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const pageSize = 20
+  const [loading, setLoading] = useState(true)
 
   const fetchInstances = async () => {
-    const res = await workflowApi.listInstances({ page, page_size: pageSize })
-    setInstances(res.data.items)
-    setTotal(res.data.total)
+    try {
+      const res = await workflowApi.listInstances({ page, page_size: pageSize })
+      setInstances(res.data.items)
+      setTotal(res.data.total)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -58,7 +64,23 @@ export default function MyInstances() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {instances.map((i) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+              </TableRow>
+            ))
+          ) : instances.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4}>
+                <EmptyState title={t('workflow.noInstances')} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            instances.map((i) => (
             <TableRow key={i.id}>
               <TableCell>
                 <Link to={`/workflow/instances/${i.id}`} className="text-blue-600 hover:underline font-medium">
@@ -71,14 +93,7 @@ export default function MyInstances() {
               </TableCell>
               <TableCell className="text-gray-500">{new Date(i.created_at).toLocaleString()}</TableCell>
             </TableRow>
-          ))}
-          {instances.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center text-gray-400 py-8">
-                {t('workflow.noInstances')}
-              </TableCell>
-            </TableRow>
-          )}
+          )))}
         </TableBody>
       </Table>
       {totalPages > 1 && (

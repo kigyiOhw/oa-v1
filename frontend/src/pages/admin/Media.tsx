@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { mediaApi, MediaFile } from '../../api/media'
 import { Button } from '@/components/ui/button'
 
 export default function Media() {
   const { t } = useTranslation()
+  const toast = useToast()
   const [files, setFiles] = useState<MediaFile[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
@@ -27,7 +29,7 @@ export default function Media() {
       await mediaApi.upload(file)
       fetchFiles(page)
     } catch (err: any) {
-      alert(err.response?.data?.detail || t('media.uploadFailed'))
+      toast.error(err.response?.data?.detail || t('media.uploadFailed'))
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -40,7 +42,7 @@ export default function Media() {
       await mediaApi.delete(id)
       fetchFiles(page)
     } catch (e: any) {
-      alert(e.response?.data?.detail || 'Delete failed')
+      toast.error(e.response?.data?.detail || 'Delete failed')
     }
   }
 

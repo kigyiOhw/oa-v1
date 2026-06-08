@@ -9,7 +9,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db.base import Base
-from app.models import Announcement, Asset, AssetAssignment, AssetCategory, AttendanceRecord, AuditLog, Consumable, ConsumableRecord, Department, EmployeeProfile, ExpenseRequest, LeaveRequest, MediaFile, Notification, OvertimeRequest, Permission, Role, Setting, User  # noqa: F401
+from app.models import Announcement, Asset, AssetAssignment, AssetCategory, AttendanceRecord, AuditLog, Consumable, ConsumableRecord, Department, EmployeeProfile, ExpenseRequest, LeaveRequest, MediaFile, Message, Notification, OvertimeRequest, Permission, Role, Setting, User  # noqa: F401
 from app.models.workflow import WorkflowDef, WorkflowHistory, WorkflowInstance, WorkflowTask  # noqa: F401
 
 config = context.config

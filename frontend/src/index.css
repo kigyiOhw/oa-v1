@@ -52,8 +52,103 @@
     --text-2xl: 1.5rem;
     --text-3xl: 1.875rem;
   }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 221.2 83.2% 53.3%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 0 0% 98%;
+    --warning: 32.1 94.6% 53.7%;
+    --warning-foreground: 0 0% 98%;
+    --danger: 0 72.2% 60.6%;
+    --danger-foreground: 0 0% 98%;
+  }
 }
 
 body {
   @apply text-foreground antialiased;
+}
+
+/* ================================================
+   Dark mode overrides for hardcoded Tailwind colors
+   These override bg-white, text-gray-*, etc. in dark mode
+   ================================================ */
+
+.dark .bg-white {
+  background-color: hsl(var(--card));
+}
+.dark .bg-gray-50 {
+  background-color: hsl(var(--muted));
+}
+.dark .bg-gray-100 {
+  background-color: hsl(var(--muted));
+}
+.dark .text-gray-900 {
+  color: hsl(var(--foreground));
+}
+.dark .text-gray-800 {
+  color: hsl(var(--foreground) / 0.9);
+}
+.dark .text-gray-700 {
+  color: hsl(var(--muted-foreground));
+}
+.dark .text-gray-600 {
+  color: hsl(var(--muted-foreground));
+}
+.dark .text-gray-500 {
+  color: hsl(var(--muted-foreground) / 0.8);
+}
+.dark .text-gray-400 {
+  color: hsl(var(--muted-foreground) / 0.6);
+}
+.dark .border-gray-200 {
+  border-color: hsl(var(--border));
+}
+.dark .border-gray-300 {
+  border-color: hsl(var(--border));
+}
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 hsl(var(--foreground) / 0.05);
+}
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px hsl(var(--foreground) / 0.08), 0 2px 4px -2px hsl(var(--foreground) / 0.05);
+}
+
+/* Modal / dialog backgrounds */
+.dark .bg-black\/30 {
+  background-color: hsl(var(--foreground) / 0.3);
+}
+
+/* Table header default */
+.dark thead.bg-gray-50,
+.dark [class*="bg-gray-50"] {
+  background-color: hsl(var(--muted));
+}
+
+/* Prose / markdown in dark mode */
+.dark .prose {
+  color: hsl(var(--foreground));
+}
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4 {
+  color: hsl(var(--foreground));
 }

@@ -61,6 +61,11 @@ docs
 .claude/context/
 .claude/memory/
 .claude/plans/
+.claude/settings.json
+
+# Codex (personal IDE config)
+.codex/
+AGENTS.md
 
 # Uploaded media files
 backend/uploads/*

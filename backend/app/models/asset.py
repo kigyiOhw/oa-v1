@@ -16,6 +16,7 @@ class AssetCategory(Base):
         Integer, ForeignKey("asset_categories.id", ondelete="SET NULL"), nullable=True
     )
     description: Mapped[str | None] = mapped_column(String(200))
+    code_prefix: Mapped[str | None] = mapped_column(String(10), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

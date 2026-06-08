@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import FormField from '@/components/ui/form-field'
 
 export default function ExpenseCreate() {
   const { t } = useTranslation()
@@ -25,6 +26,7 @@ export default function ExpenseCreate() {
   const [description, setDescription] = useState('')
   const [attachmentUrls, setAttachmentUrls] = useState('')
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (!id) return
@@ -50,11 +52,19 @@ export default function ExpenseCreate() {
     }
   }
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0)
+      errs.amount = t('validation.required')
+    if (parseFloat(amount) > 1000000)
+      errs.amount = t('validation.max').replace('{n}', '1000000')
+    if (!description.trim()) errs.description = t('validation.required')
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const handleSaveDraft = async () => {
-    if (!amount || !description) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
       if (isEdit) {
@@ -68,10 +78,7 @@ export default function ExpenseCreate() {
   }
 
   const handleSubmit = async () => {
-    if (!amount || !description) {
-      alert(t('common.requiredFields'))
-      return
-    }
+    if (!validate()) return
     setSaving(true)
     try {
       let expenseId = Number(id)
@@ -93,8 +100,7 @@ export default function ExpenseCreate() {
       <h1 className="text-2xl font-bold mb-6">{isEdit ? t('expense.editExpense') : t('expense.newExpense')}</h1>
 
       <div className="bg-white rounded-lg border p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('expense.expenseType')}</label>
+        <FormField label={t('expense.expenseType')}>
           <Select
             value={expenseType}
             onChange={(e) => setExpenseType(e.target.value)}
@@ -103,39 +109,37 @@ export default function ExpenseCreate() {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Select>
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('expense.amount')} (¥)</label>
+        <FormField label={`${t('expense.amount')} (¥)`} error={errors.amount} required>
           <Input
             type="number"
             step="0.01"
             min="0.01"
+            max="1000000"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => { setAmount(e.target.value); setErrors((p) => { const n = {...p}; delete n.amount; return n }) }}
             placeholder="0.00"
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('expense.description')}</label>
+        <FormField label={t('expense.description')} error={errors.description} required>
           <Textarea
             rows={4}
             placeholder={t('expense.descriptionPlaceholder')}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => { setDescription(e.target.value); setErrors((p) => { const n = {...p}; delete n.description; return n }) }}
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">{t('expense.attachmentUrls')}</label>
+        <FormField label={t('expense.attachmentUrls')}>
           <Textarea
             rows={3}
             placeholder={t('expense.attachmentUrlsPlaceholder')}
             value={attachmentUrls}
             onChange={(e) => setAttachmentUrls(e.target.value)}
           />
-        </div>
+        </FormField>
 
         <div className="flex gap-3 pt-2">
           <Button variant="outline" disabled={saving} onClick={handleSaveDraft}>

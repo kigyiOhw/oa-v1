@@ -4,6 +4,8 @@ import { userApi, UserItem } from '../../api/users'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function Users() {
   const { t } = useTranslation()
@@ -12,11 +14,15 @@ export default function Users() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<UserItem | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const fetchUsers = async () => {
-    const res = await userApi.list({ page, page_size: 20, search: search || undefined })
-    setUsers(res.data.items)
-    setTotal(res.data.total)
+    try {
+      const res = await userApi.list({ page, page_size: 20, search: search || undefined })
+      setUsers(res.data.items)
+      setTotal(res.data.total)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -53,7 +59,25 @@ export default function Users() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((u) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              </TableRow>
+            ))
+          ) : users.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6}>
+                <EmptyState title={t('common.noData')} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            users.map((u) => (
             <TableRow key={u.id}>
               <TableCell>{u.id}</TableCell>
               <TableCell>{u.username}</TableCell>
@@ -76,7 +100,7 @@ export default function Users() {
                 </Button>
               </TableCell>
             </TableRow>
-          ))}
+          )))}
         </TableBody>
       </Table>
       <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">

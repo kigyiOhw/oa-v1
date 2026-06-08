@@ -1,26 +1,33 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { ArrowLeft } from 'lucide-react'
 import { workflowApi, TaskItem, HistoryItem } from '../../api/workflow'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Skeleton } from '@/components/ui/skeleton'
+import WorkflowFlowchart from '@/components/WorkflowFlowchart'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function TaskDetail() {
   const { t } = useTranslation()
+  const toast = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [task, setTask] = useState<TaskItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [comment, setComment] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchTask = async () => {
     try {
       const res = await workflowApi.getTask(Number(id))
       setTask(res.data)
     } catch {
-      alert('Task not found')
+      toast.error('Task not found')
       navigate('/workflow/tasks')
     } finally {
       setLoading(false)
@@ -31,22 +38,29 @@ export default function TaskDetail() {
     fetchTask()
   }, [id])
 
-  const handleAction = async (action: 'approve' | 'reject') => {
+  const handleAction = (action: 'approve' | 'reject') => {
     const confirmMsg = action === 'approve' ? t('workflow.confirmApprove') : t('workflow.confirmReject')
-    if (!confirm(confirmMsg)) return
-    setProcessing(true)
-    try {
-      if (action === 'approve') {
-        await workflowApi.approveTask(Number(id), comment || null)
-      } else {
-        await workflowApi.rejectTask(Number(id), comment || null)
-      }
-      navigate('/workflow/tasks')
-    } catch (e: any) {
-      alert(e.response?.data?.detail || 'Action failed')
-    } finally {
-      setProcessing(false)
-    }
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: confirmMsg,
+      onConfirm: async () => {
+        setProcessing(true)
+        setErrorMsg('')
+        try {
+          if (action === 'approve') {
+            await workflowApi.approveTask(Number(id), comment || null)
+          } else {
+            await workflowApi.rejectTask(Number(id), comment || null)
+          }
+          navigate('/workflow/tasks')
+        } catch (e: any) {
+          setErrorMsg(e.response?.data?.detail || 'Action failed')
+        } finally {
+          setProcessing(false)
+        }
+      },
+    })
   }
 
   const nodeLabel = (nodeId: string) => {
@@ -57,7 +71,12 @@ export default function TaskDetail() {
     return node?.label || nodeId
   }
 
-  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-64 w-full rounded-lg" />
+    </div>
+  )
   if (!task) return null
 
   const instance = task.instance
@@ -79,6 +98,26 @@ export default function TaskDetail() {
           {t('workflow.workflow')}: {instance?.workflow_def?.name || 'Unknown'}
         </p>
       </div>
+
+      {/* Flowchart */}
+      {instance && (
+        <div className="bg-white rounded-lg border p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-3">{t('workflow.flowchart')}</h2>
+          <WorkflowFlowchart
+            definition={instance.workflow_def?.definition}
+            tasks={instance.tasks}
+            history={instance.history}
+            currentNodeId={instance.current_node_id}
+            status={instance.status}
+          />
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-6">
+          <p className="text-sm text-red-700">{errorMsg}</p>
+        </div>
+      )}
 
       {task.status === 'pending' && (
         <div className="bg-white rounded-lg border p-6 mb-6">
@@ -124,6 +163,15 @@ export default function TaskDetail() {
           </div>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

@@ -123,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
         </nav>
       </aside>
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+      <main className="flex-1 p-6 overflow-auto bg-background">{children}</main>
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import logging
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import OAException
@@ -19,6 +18,7 @@ from app.schemas.workflow import (
     WorkflowDefUpdate,
 )
 from app.services.notification import NotificationService
+from app.services.workflow.hooks import get_hook
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,7 @@ class WorkflowEngineService:
             description=data.description,
             icon=data.icon,
             definition=data.definition,
+            on_complete_hook=data.on_complete_hook,
         )
         result = await self.def_repo.create(wf_def)
         logger.info("----------WorkflowEngineService.create_definition, done, def_id=%s", result.id)
@@ -80,6 +81,8 @@ class WorkflowEngineService:
                         def_id, wf_def.version)
         if data.is_active is not None:
             wf_def.is_active = data.is_active
+        if data.on_complete_hook is not None:
+            wf_def.on_complete_hook = data.on_complete_hook
         result = await self.def_repo.update(wf_def)
         logger.info("----------WorkflowEngineService.update_definition, done, def_id=%s", def_id)
         return result
@@ -220,44 +223,21 @@ class WorkflowEngineService:
             instance.status = outcome
             instance.current_node_id = next_node["id"]
 
-            # If this is a Leave Approval workflow, sync leave status + attendance
-            if instance.workflow_def.name == "Leave Approval":
-                from app.models.leave_request import LeaveRequest
-                leave = (await self.session.execute(
-                    select(LeaveRequest).where(
-                        LeaveRequest.workflow_instance_id == instance.id
+            # Dispatch completion hook by name (plugin-style, no hardcoded module branches)
+            hook_name = instance.workflow_def.on_complete_hook
+            if hook_name:
+                hook = get_hook(hook_name)
+                if hook:
+                    logger.info(
+                        "Dispatching hook '%s' for instance_id=%s",
+                        hook_name, instance.id,
                     )
-                )).scalar_one_or_none()
-                if leave:
-                    from app.services.leave import LeaveService
-                    leave_svc = LeaveService(self.session)
-                    await leave_svc.sync_status(leave)
-
-            # If this is an Expense Approval workflow, sync expense status
-            if instance.workflow_def.name == "Expense Approval":
-                from app.models.expense_request import ExpenseRequest
-                expense = (await self.session.execute(
-                    select(ExpenseRequest).where(
-                        ExpenseRequest.workflow_instance_id == instance.id
+                    await hook(self.session, instance)
+                else:
+                    logger.warning(
+                        "Hook '%s' not registered — skipping for instance_id=%s",
+                        hook_name, instance.id,
                     )
-                )).scalar_one_or_none()
-                if expense:
-                    from app.services.expense import ExpenseService
-                    expense_svc = ExpenseService(self.session)
-                    await expense_svc.sync_status(expense)
-
-            # If this is an Overtime Approval workflow, sync overtime status
-            if instance.workflow_def.name == "Overtime Approval":
-                from app.models.overtime_request import OvertimeRequest
-                overtime = (await self.session.execute(
-                    select(OvertimeRequest).where(
-                        OvertimeRequest.workflow_instance_id == instance.id
-                    )
-                )).scalar_one_or_none()
-                if overtime:
-                    from app.services.overtime import OvertimeService
-                    overtime_svc = OvertimeService(self.session)
-                    await overtime_svc.sync_status(overtime)
 
             await NotificationService.send_notification(
                 self.session,

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { overtimeApi, OvertimeItem, overtimeStatusColor } from '../../api/overtime'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function MyOvertimes() {
   const { t } = useTranslation()
@@ -13,6 +14,7 @@ export default function MyOvertimes() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const pageSize = 20
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchOvertimes = async () => {
     try {
@@ -28,29 +30,20 @@ export default function MyOvertimes() {
     fetchOvertimes()
   }, [page, statusFilter])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('overtime.deleteDraftConfirm'))) return
-    try {
-      await overtimeApi.delete(id)
-      fetchOvertimes()
-    } catch { /* handled by axios interceptor */ }
+  const confirmAction = (message: string, action: () => Promise<void>) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message,
+      onConfirm: async () => {
+        try { await action(); fetchOvertimes() } catch { /* handled by axios interceptor */ }
+      },
+    })
   }
 
-  const handleSubmit = async (id: number) => {
-    if (!confirm(t('overtime.submitConfirm'))) return
-    try {
-      await overtimeApi.submit(id)
-      fetchOvertimes()
-    } catch { /* handled by axios interceptor */ }
-  }
-
-  const handleCancel = async (id: number) => {
-    if (!confirm(t('overtime.cancelConfirm'))) return
-    try {
-      await overtimeApi.cancel(id)
-      fetchOvertimes()
-    } catch { /* handled by axios interceptor */ }
-  }
+  const handleDelete = (id: number) => confirmAction(t('overtime.deleteDraftConfirm'), async () => { await overtimeApi.delete(id) })
+  const handleSubmit = (id: number) => confirmAction(t('overtime.submitConfirm'), async () => { await overtimeApi.submit(id) })
+  const handleCancel = (id: number) => confirmAction(t('overtime.cancelConfirm'), async () => { await overtimeApi.cancel(id) })
 
   const totalPages = Math.ceil(total / pageSize)
 
@@ -162,6 +155,16 @@ export default function MyOvertimes() {
           </Button>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

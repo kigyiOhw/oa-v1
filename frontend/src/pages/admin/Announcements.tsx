@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { announcementApi, Announcement } from '../../api/announcement'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function Announcements() {
   const { t } = useTranslation()
+  const toast = useToast()
   const [anns, setAnns] = useState<Announcement[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<Announcement | null>(null)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchAnns = async (p: number) => {
     const res = await announcementApi.listPublished(p, 10)
@@ -23,14 +27,20 @@ export default function Announcements() {
 
   useEffect(() => { fetchAnns(page) }, [page])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('announcements.deleteConfirm'))) return
-    try {
-      await announcementApi.delete(id)
-      fetchAnns(page)
-    } catch (e: any) {
-      alert(e.response?.data?.detail || 'Delete failed')
-    }
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('announcements.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await announcementApi.delete(id)
+          fetchAnns(page)
+        } catch (e: any) {
+          toast.error(e.response?.data?.detail || 'Delete failed')
+        }
+      },
+    })
   }
 
   return (
@@ -91,6 +101,16 @@ export default function Announcements() {
       )}
       {editing && (
         <AnnFormModal ann={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); fetchAnns(page) }} />
+      )}
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
       )}
     </div>
   )

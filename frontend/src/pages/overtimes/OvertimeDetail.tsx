@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { ArrowLeft } from 'lucide-react'
 import { overtimeApi, OvertimeItem, overtimeStatusColor } from '../../api/overtime'
 import { workflowApi, HistoryItem } from '../../api/workflow'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function OvertimeDetail() {
   const { t } = useTranslation()
+  const toast = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [overtime, setOvertime] = useState<OvertimeItem | null>(null)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchOvertime = async () => {
     try {
@@ -23,7 +28,7 @@ export default function OvertimeDetail() {
         setHistory(instRes.data.history || [])
       }
     } catch {
-      alert(t('overtime.notFound'))
+      toast.error(t('overtime.notFound'))
       navigate('/overtimes')
     } finally {
       setLoading(false)
@@ -34,15 +39,27 @@ export default function OvertimeDetail() {
     fetchOvertime()
   }, [id])
 
-  const handleCancel = async () => {
-    if (!confirm(t('overtime.cancelConfirm'))) return
-    try {
-      await overtimeApi.cancel(Number(id))
-      fetchOvertime()
-    } catch { /* handled by axios interceptor */ }
+  const handleCancel = () => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('overtime.cancelConfirm'),
+      onConfirm: async () => {
+        try {
+          await overtimeApi.cancel(Number(id))
+          fetchOvertime()
+        } catch { /* handled by axios interceptor */ }
+      },
+    })
   }
 
-  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-64 w-full rounded-lg" />
+      <Skeleton className="h-32 w-full rounded-lg" />
+    </div>
+  )
   if (!overtime) return null
 
   return (
@@ -130,6 +147,16 @@ export default function OvertimeDetail() {
           </div>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

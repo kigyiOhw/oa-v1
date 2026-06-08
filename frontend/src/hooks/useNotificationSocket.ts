@@ -1,9 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { useNotificationStore, type Notification } from '../stores/notification'
+import { useMessageStore } from '../stores/messages'
+import type { MessageItem } from '../api/messages'
 
 export function useNotificationSocket() {
   const addNotification = useNotificationStore((s) => s.addNotification)
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount)
+  const addMessage = useMessageStore((s) => s.addMessage)
+  const fetchMessageUnread = useMessageStore((s) => s.fetchUnreadCount)
   const wsRef = useRef<WebSocket | null>(null)
   const retriesRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -24,6 +28,7 @@ export function useNotificationSocket() {
         wsRef.current.onopen = () => {
           retriesRef.current = 0
           fetchUnreadCount()
+          fetchMessageUnread()
         }
 
         wsRef.current.onmessage = (event) => {
@@ -31,6 +36,10 @@ export function useNotificationSocket() {
             const data = JSON.parse(event.data)
             if (data.type === 'notification' && data.payload) {
               addNotification(data.payload as Notification)
+            } else if (data.type === 'new_message' && data.payload) {
+              addMessage(data.payload as MessageItem)
+            } else if (data.type === 'message_read' && data.payload) {
+              // Read receipt: the sent messages page will re-fetch when visited
             }
           } catch {
             // ignore malformed messages
@@ -65,5 +74,5 @@ export function useNotificationSocket() {
         wsRef.current = null
       }
     }
-  }, [addNotification, fetchUnreadCount])
+  }, [addNotification, fetchUnreadCount, addMessage, fetchMessageUnread])
 }

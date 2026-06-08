@@ -1,24 +1,30 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '@/components/ui/toast'
 import { ArrowLeft } from 'lucide-react'
 import { workflowApi, InstanceItem, HistoryItem } from '../../api/workflow'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import WorkflowFlowchart from '@/components/WorkflowFlowchart'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function InstanceDetail() {
   const { t } = useTranslation()
+  const toast = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [instance, setInstance] = useState<InstanceItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchInstance = async () => {
     try {
       const res = await workflowApi.getInstance(Number(id))
       setInstance(res.data)
     } catch {
-      alert('Instance not found')
+      toast.error('Instance not found')
       navigate('/workflow/my')
     } finally {
       setLoading(false)
@@ -29,10 +35,16 @@ export default function InstanceDetail() {
     fetchInstance()
   }, [id])
 
-  const handleCancel = async () => {
-    if (!confirm(t('workflow.cancelConfirm'))) return
-    await workflowApi.cancelInstance(Number(id))
-    fetchInstance()
+  const handleCancel = () => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('workflow.cancelConfirm'),
+      onConfirm: async () => {
+        await workflowApi.cancelInstance(Number(id))
+        fetchInstance()
+      },
+    })
   }
 
   const statusLabel = (s: string) => {
@@ -52,7 +64,13 @@ export default function InstanceDetail() {
     return node?.label || nodeId
   }
 
-  if (loading) return <div className="p-8 text-gray-500">{t('common.loading')}</div>
+  if (loading) return (
+    <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-lg" />
+    </div>
+  )
   if (!instance) return null
 
   return (
@@ -90,6 +108,18 @@ export default function InstanceDetail() {
         )}
       </div>
 
+      {/* Flowchart */}
+      <div className="bg-white rounded-lg border p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-3">{t('workflow.flowchart')}</h2>
+        <WorkflowFlowchart
+          definition={instance.workflow_def?.definition}
+          tasks={instance.tasks}
+          history={instance.history}
+          currentNodeId={instance.current_node_id}
+          status={instance.status}
+        />
+      </div>
+
       {instance.tasks && instance.tasks.length > 0 && (
         <div className="bg-white rounded-lg border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-3">{t('workflow.currentTasks')}</h2>
@@ -120,6 +150,16 @@ export default function InstanceDetail() {
           <Timeline history={instance.history} nodeLabel={nodeLabel} />
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

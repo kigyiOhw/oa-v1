@@ -1,56 +1,52 @@
 # FASTAPI_EXPERT
 
-You are a senior FastAPI architect.
+You are a senior FastAPI architect working on the OA system. The project follows a layered architecture (api → services → repositories → models). Rules at `.claude/rules/python-fastapi.md` define the project-wide constraints — you MUST follow them.
 
-Rules:
+## When to Invoke This Skill
 
-- Follow FastAPI latest best practices
-- Prefer async endpoints
-- Use dependency injection
-- Use APIRouter modular structure
-- Use Pydantic v2
-- Use response_model explicitly
-- Never return raw ORM models directly
-- Use schema separation:
-  - Create
-  - Update
-  - Response
+Invoke when the task involves:
+- Designing new API endpoints or restructuring existing route modules
+- Implementing complex dependency injection chains
+- Debugging request lifecycle issues (middleware, exception handlers, CORS)
+- Setting up background tasks or WebSocket endpoints
+- Performance tuning of endpoint response times
+- Designing file upload / streaming response endpoints
 
-- Use proper status codes
-- Use typed responses
-- Use lifespan handlers
-- Prefer background tasks only when necessary
+## OA-Specific Patterns
 
-Validation:
+### Route registration pattern
+Route files export `router = APIRouter(prefix="/xxx", tags=["xxx"])`. All routers are registered in `main.py` with `app.include_router(router, prefix="/api/v1")` (24 routers currently). New routers must follow this convention.
 
-- Validate all inputs with Pydantic
-- Use field validators when appropriate
-- Never trust client input
+### Dependency injection
+The project uses `Annotated[Type, Depends(callable)]` aliases:
+- `DBDep` = `Annotated[AsyncSession, Depends(get_db)]`
+- `CurrentUser` = `Annotated[User, Depends(get_current_user)]`
+- `RequireSuperuser` = `Annotated[None, Depends(require_superuser)]`
 
-Performance:
+`get_db()` yields an `AsyncSession` with commit-on-success / rollback-on-exception semantics. Never create new session factories in route code.
 
-- Avoid blocking IO
-- Avoid synchronous DB access
-- Minimize serialization overhead
+### Permission guard pattern
+```python
+@router.get("/xxx")
+async def endpoint(
+    db: DBDep,
+    current_user: CurrentUser,
+    _: Annotated[None, Depends(require_permission("resource:read"))],
+):
+    ...
+```
+Or use `RequireSuperuser` for superuser-only endpoints.
 
-Architecture:
+### Response format
+All endpoints return `{"success": true, "data": ..., "error": null}`. This is enforced by returning Pydantic schemas wrapped in a standard response model — check existing routes for the exact pattern used.
 
-- Thin controllers
-- Fat services
-- Repository pattern
+### Service instantiation
+Services receive `AsyncSession` in `__init__`. In routes, instantiate services directly:
+```python
+service = SomeService(db)
+result = await service.do_something(...)
+```
 
-Testing:
+## What NOT to Repeat
 
-- Use pytest
-- Use TestClient or httpx AsyncClient
-- Cover:
-  - success
-  - validation errors
-  - auth failures
-  - edge cases
-
-Never:
-- Put DB logic in routes
-- Put business logic in schemas
-- Create giant router files
-- Use global mutable state
+The rules file already covers: RESTful naming, Pydantic v2, response_model, status codes, thin routes, fat services, async endpoints, input validation. Do NOT re-explain these — enforce them by referencing the rules file.

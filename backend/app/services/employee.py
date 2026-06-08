@@ -113,8 +113,25 @@ class EmployeeService:
         if subordinates or pending_tasks:
             await self.session.flush()
 
-        # 3. Return assets (Phase 7 will add actual asset handling)
-        # Assets stub: no asset table yet in Phase 6
+        # 3. Return assigned assets
+        from app.models.asset import Asset, AssetAssignment
+        assets_result = await self.session.execute(
+            select(Asset).where(Asset.current_user_id == profile.user_id)
+        )
+        assigned_assets = assets_result.scalars().all()
+        for asset in assigned_assets:
+            self.session.add(AssetAssignment(
+                asset_id=asset.id,
+                user_id=profile.user_id,
+                action="return",
+                action_date=data.resignation_date or date.today(),
+                notes="Auto-returned on resignation",
+                operator_id=profile.user_id,
+            ))
+            asset.current_user_id = None
+        if assigned_assets:
+            await self.session.flush()
+            logger.info("EmployeeService.resign | returned %d assets for user_id=%s", len(assigned_assets), profile.user_id)
 
         # 4. Set resignation status
         profile.employment_status = "resigned"

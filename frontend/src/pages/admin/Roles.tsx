@@ -5,6 +5,8 @@ import { roleApi, RoleItem, RoleTypeItem, PermissionItem } from '../../api/roles
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   super_admin: <Crown size={16} className="inline" />,
@@ -20,16 +22,20 @@ export default function Roles() {
   const [roleTypes, setRoleTypes] = useState<RoleTypeItem[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<RoleItem | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const fetchRoles = async () => {
-    const [r, p, rt] = await Promise.all([
-      roleApi.list(),
-      roleApi.listPermissions(),
-      roleApi.listTypes().catch(() => ({ data: [] as RoleTypeItem[] })),
-    ])
-    setRoles(r.data)
-    setPermissions(p.data)
-    if (rt.data.length > 0) setRoleTypes(rt.data)
+    try {
+      const [r, p, rt] = await Promise.all([
+        roleApi.list(),
+        roleApi.listPermissions(),
+        roleApi.listTypes().catch(() => ({ data: [] as RoleTypeItem[] })),
+      ])
+      setRoles(r.data)
+      setPermissions(p.data)
+      if (rt.data.length > 0) setRoleTypes(rt.data)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -43,14 +49,9 @@ export default function Roles() {
   }
 
   const typeLabel = (roleType: string) => {
-    if (roleTypes.length > 0) {
-      const found = roleTypes.find((rt) => rt.value === roleType)
-      if (found) return found.label
-    }
-    const defaults: Record<string, string> = {
-      super_admin: 'Super Admin', module_admin: 'Module Admin', dept_admin: 'Dept Admin', user: 'User',
-    }
-    return defaults[roleType] || roleType
+    const key = `roles.typeLabels.${roleType}`
+    const label = t(key)
+    return label !== key ? label : roleType
   }
 
   return (
@@ -72,7 +73,24 @@ export default function Roles() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {roles.map((r) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-8" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              </TableRow>
+            ))
+          ) : roles.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5}>
+                <EmptyState title={t('common.noData')} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            roles.map((r) => (
             <TableRow key={r.id}>
               <TableCell>{r.id}</TableCell>
               <TableCell className="font-medium">{r.name}</TableCell>
@@ -94,7 +112,7 @@ export default function Roles() {
                 </Button>
               </TableCell>
             </TableRow>
-          ))}
+          )))}
         </TableBody>
       </Table>
 
@@ -142,12 +160,11 @@ function RoleWizardModal({
 
   const types = roleTypes.length > 0
     ? roleTypes
-    : [
-        { value: 'super_admin', label: 'Super Admin', description: 'Full access to all modules and departments' },
-        { value: 'module_admin', label: 'Module Admin', description: 'Manage specific modules, global or department scope' },
-        { value: 'dept_admin', label: 'Dept Admin', description: 'Manage own department: employees, assets, consumables' },
-        { value: 'user', label: 'User', description: 'Personal data and self-service only' },
-      ]
+    : ['super_admin', 'module_admin', 'dept_admin', 'user'].map((v) => ({
+        value: v,
+        label: t(`roles.typeLabels.${v}`),
+        description: t(`roles.typeDescriptions.${v}`),
+      }))
 
   const grouped: Record<string, PermissionItem[]> = {}
   for (const p of permissions) {

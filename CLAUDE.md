@@ -15,7 +15,7 @@ docker-compose up -d          # Start PostgreSQL 16 + Redis 7
 ```bash
 cd backend
 uv pip install -e ".[dev]"    # Install dependencies (first time)
-uv run uvicorn app.main:app --reload --port 8000   # Dev server
+uv run uvicorn app.main:app --reload --port 8402   # Dev server
 uv run python -m app.core.seed # Seed initial data (first time)
 uv run alembic upgrade head   # Run migrations
 uv run alembic revision --autogenerate -m "desc"   # Generate migration
@@ -30,7 +30,7 @@ uv run mypy app               # Type check
 ```bash
 cd frontend
 npm install                   # Install dependencies (first time)
-npm run dev                   # Dev server on :5173, proxies /api to :8000
+npm run dev                   # Dev server on :5307, proxies /api to :8402
 npm run build                 # Production build
 npm run lint                  # ESLint
 ```
@@ -70,7 +70,7 @@ Roles have a `role_type` field: `super_admin` (full access), `module_admin` (mod
 - **Routing**: React Router v6 — Dashboard `/`, Login `/login`, Register `/register`, Profile `/profile`, MyAssets `/my-assets`, Workflow (`/workflow/my`, `/workflow/tasks`, `/workflow/tasks/:id`, `/workflow/instances/:id`), Leaves (`/leaves`, `/leaves/new`, `/leaves/:id`, `/leaves/:id/edit`), Expenses (`/expenses`, `/expenses/new`, `/expenses/:id`, `/expenses/:id/edit`), Overtimes (`/overtimes`, `/overtimes/new`, `/overtimes/:id`, `/overtimes/:id/edit`), Attendance (`/attendance`, `/attendance/team`, `/attendance/team/:userId`), Notifications (`/notifications`), Contacts (`/contacts`), Admin (`/admin/*` including `/admin/users`, `/admin/roles` (with wizard for role type/scope), `/admin/departments`, `/admin/workflow-defs`, `/admin/announcements`, `/admin/media`, `/admin/employees`, `/admin/employees/:id`, `/admin/assets`, `/admin/assets/new`, `/admin/assets/:id`, `/admin/assets/:id/edit`, `/admin/asset-categories`, `/admin/consumables`, `/admin/consumables/new`, `/admin/consumables/:id`, `/admin/consumables/:id/edit`, `/admin/settings`, `/admin/attendance-config`, `/admin/audit-logs`).
 - **Components**: `ThemeSwitcher` (floating FAB for background customization), `NotificationBell` (fixed bell with unread badge + dropdown, bottom-left), `LanguageSwitcher` (EN/中 toggle), `ErrorBoundary`, `ProtectedRoute`, `PermissionGuard`, `AdminLayout`.
 - **API**: Axios instance with interceptors for token injection and 401 refresh handling.
-- **Proxy**: Vite dev server proxies `/api` → `localhost:8000` and `/ws` → `ws://localhost:8000`.
+- **Proxy**: Vite dev server proxies `/api` → `127.0.0.1:8402` and `/ws` → `ws://127.0.0.1:8402`.
 
 ### Database
 All models use `Base = declarative_base()` from `db/base.py`. New models must be imported in `alembic/env.py` for autogenerate to detect them.

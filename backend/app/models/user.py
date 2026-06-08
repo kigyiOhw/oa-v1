@@ -83,6 +83,12 @@ class User(Base):
     notifications: Mapped[list["Notification"]] = relationship(
         "Notification", back_populates="user"
     )
+    sent_messages: Mapped[list["Message"]] = relationship(
+        "Message", foreign_keys="Message.sender_id", back_populates="sender"
+    )
+    received_messages: Mapped[list["Message"]] = relationship(
+        "Message", foreign_keys="Message.recipient_id", back_populates="recipient"
+    )
 
     @property
     def permissions(self) -> list[str]:

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { expenseApi, ExpenseItem, expenseTypeLabel, expenseStatusColor } from '../../api/expense'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function MyExpenses() {
   const { t } = useTranslation()
@@ -13,6 +14,7 @@ export default function MyExpenses() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const pageSize = 20
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchExpenses = async () => {
     try {
@@ -28,29 +30,20 @@ export default function MyExpenses() {
     fetchExpenses()
   }, [page, statusFilter])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('expense.deleteDraftConfirm'))) return
-    try {
-      await expenseApi.delete(id)
-      fetchExpenses()
-    } catch { /* handled by axios interceptor */ }
+  const confirmAction = (message: string, action: () => Promise<void>) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message,
+      onConfirm: async () => {
+        try { await action(); fetchExpenses() } catch { /* handled by axios interceptor */ }
+      },
+    })
   }
 
-  const handleSubmit = async (id: number) => {
-    if (!confirm(t('expense.submitConfirm'))) return
-    try {
-      await expenseApi.submit(id)
-      fetchExpenses()
-    } catch { /* handled by axios interceptor */ }
-  }
-
-  const handleCancel = async (id: number) => {
-    if (!confirm(t('expense.cancelConfirm'))) return
-    try {
-      await expenseApi.cancel(id)
-      fetchExpenses()
-    } catch { /* handled by axios interceptor */ }
-  }
+  const handleDelete = (id: number) => confirmAction(t('expense.deleteDraftConfirm'), async () => { await expenseApi.delete(id) })
+  const handleSubmit = (id: number) => confirmAction(t('expense.submitConfirm'), async () => { await expenseApi.submit(id) })
+  const handleCancel = (id: number) => confirmAction(t('expense.cancelConfirm'), async () => { await expenseApi.cancel(id) })
 
   const totalPages = Math.ceil(total / pageSize)
 
@@ -160,6 +153,16 @@ export default function MyExpenses() {
           </Button>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

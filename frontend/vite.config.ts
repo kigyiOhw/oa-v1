@@ -10,18 +10,18 @@ export default defineConfig({
   },
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 5307,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8402',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: 'ws://127.0.0.1:8402',
         ws: true,
       },
       '/media': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8402',
         changeOrigin: true,
       },
     },

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { workflowApi, TaskItem } from '../../api/workflow'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function MyTasks() {
   const { t } = useTranslation()
@@ -11,11 +13,15 @@ export default function MyTasks() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const pageSize = 20
+  const [loading, setLoading] = useState(true)
 
   const fetchTasks = async () => {
-    const res = await workflowApi.listTasks({ page, page_size: pageSize })
-    setTasks(res.data.items)
-    setTotal(res.data.total)
+    try {
+      const res = await workflowApi.listTasks({ page, page_size: pageSize })
+      setTasks(res.data.items)
+      setTotal(res.data.total)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -46,7 +52,23 @@ export default function MyTasks() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((t) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+              </TableRow>
+            ))
+          ) : tasks.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4}>
+                <EmptyState title={t('workflow.noTasks')} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            tasks.map((t) => (
             <TableRow key={t.id}>
               <TableCell>
                 <Link to={`/workflow/tasks/${t.id}`} className="text-blue-600 hover:underline font-medium">
@@ -57,14 +79,7 @@ export default function MyTasks() {
               <TableCell>{nodeLabel(t)}</TableCell>
               <TableCell className="text-gray-500">{new Date(t.created_at).toLocaleString()}</TableCell>
             </TableRow>
-          ))}
-          {tasks.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center text-gray-400 py-8">
-                {t('workflow.noTasks')}
-              </TableCell>
-            </TableRow>
-          )}
+          )))}
         </TableBody>
       </Table>
       {totalPages > 1 && (

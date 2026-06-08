@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { leaveApi, LeaveItem, leaveTypeLabel, leaveStatusColor } from '../../api/leave'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function MyLeaves() {
   const { t } = useTranslation()
@@ -13,6 +16,8 @@ export default function MyLeaves() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
   const pageSize = 20
+  const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchLeaves = async () => {
     try {
@@ -21,36 +26,28 @@ export default function MyLeaves() {
       const res = await leaveApi.list(params as any)
       setLeaves(res.data.items)
       setTotal(res.data.total)
-    } catch { /* handled by axios interceptor */ }
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
     fetchLeaves()
   }, [page, statusFilter])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('leave.deleteDraftConfirm'))) return
-    try {
-      await leaveApi.delete(id)
-      fetchLeaves()
-    } catch { /* handled by axios interceptor */ }
+  const confirmAction = (message: string, action: () => Promise<void>) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message,
+      onConfirm: async () => {
+        try { await action(); fetchLeaves() } catch { /* handled by axios interceptor */ }
+      },
+    })
   }
 
-  const handleSubmit = async (id: number) => {
-    if (!confirm(t('leave.submitConfirm'))) return
-    try {
-      await leaveApi.submit(id)
-      fetchLeaves()
-    } catch { /* handled by axios interceptor */ }
-  }
-
-  const handleCancel = async (id: number) => {
-    if (!confirm(t('leave.cancelConfirm'))) return
-    try {
-      await leaveApi.cancel(id)
-      fetchLeaves()
-    } catch { /* handled by axios interceptor */ }
-  }
+  const handleDelete = (id: number) => confirmAction(t('leave.deleteDraftConfirm'), async () => { await leaveApi.delete(id) })
+  const handleSubmit = (id: number) => confirmAction(t('leave.submitConfirm'), async () => { await leaveApi.submit(id) })
+  const handleCancel = (id: number) => confirmAction(t('leave.cancelConfirm'), async () => { await leaveApi.cancel(id) })
 
   const totalPages = Math.ceil(total / pageSize)
 
@@ -97,7 +94,24 @@ export default function MyLeaves() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {leaves.map((l) => (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              </TableRow>
+            ))
+          ) : leaves.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5}>
+                <EmptyState title={t('leave.myLeaves')} action={{ label: t('leave.newLeave'), onClick: () => navigate('/leaves/new') }} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            leaves.map((l) => (
             <TableRow key={l.id}>
               <TableCell>{leaveTypeLabel(l.leave_type)}</TableCell>
               <TableCell className="text-gray-600">
@@ -140,8 +154,8 @@ export default function MyLeaves() {
                 </div>
               </TableCell>
             </TableRow>
-          ))}
-          {leaves.length === 0 && (
+          )))}
+          {leaves.length === 0 && !loading && (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-gray-400 py-8">
                 {t('common.noData')}
@@ -162,6 +176,16 @@ export default function MyLeaves() {
           </Button>
         </div>
       )}
+        {confirmState && (
+          <ConfirmDialog
+            open={confirmState.open}
+            title={confirmState.title}
+            message={confirmState.message}
+            variant="destructive"
+            onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+            onCancel={() => setConfirmState(null)}
+          />
+        )}
     </div>
   )
 }

@@ -9,6 +9,7 @@ class WorkflowDefCreate(BaseModel):
     description: str | None = Field(None, max_length=500)
     icon: str | None = Field(None, max_length=50)
     definition: dict
+    on_complete_hook: str | None = Field(None, max_length=100)
 
 
 class WorkflowDefUpdate(BaseModel):
@@ -17,6 +18,7 @@ class WorkflowDefUpdate(BaseModel):
     icon: str | None = None
     definition: dict | None = None
     is_active: bool | None = None
+    on_complete_hook: str | None = Field(None, max_length=100)
 
 
 class WorkflowDefOut(BaseModel):
@@ -29,6 +31,7 @@ class WorkflowDefOut(BaseModel):
     definition: dict
     is_active: bool
     version: int
+    on_complete_hook: str | None = None
     created_at: datetime
     updated_at: datetime
 

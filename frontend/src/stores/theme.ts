@@ -9,10 +9,12 @@ interface ThemeState {
   color: string
   gradient: string
   imageUrl: string
+  darkMode: boolean
   setMode: (mode: ThemeMode) => void
   setColor: (color: string) => void
   setGradient: (gradient: string) => void
   setImageUrl: (url: string) => void
+  toggleDarkMode: () => void
   reset: () => void
 }
 
@@ -21,6 +23,7 @@ const DEFAULTS = {
   color: '#f9fafb',
   gradient: '',
   imageUrl: '',
+  darkMode: false,
 }
 
 function load(): typeof DEFAULTS {
@@ -33,6 +36,7 @@ function load(): typeof DEFAULTS {
         color: p.color ?? DEFAULTS.color,
         gradient: p.gradient ?? DEFAULTS.gradient,
         imageUrl: p.imageUrl ?? DEFAULTS.imageUrl,
+        darkMode: p.darkMode ?? DEFAULTS.darkMode,
       }
     }
   } catch { /* ignore */ }
@@ -51,25 +55,32 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     setMode: (mode: ThemeMode) => {
       set({ mode })
       const s = get()
-      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl })
+      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl, darkMode: s.darkMode })
     },
 
     setColor: (color: string) => {
       set({ color, mode: 'color' })
       const s = get()
-      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl })
+      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl, darkMode: s.darkMode })
     },
 
     setGradient: (gradient: string) => {
       set({ gradient, mode: 'gradient' })
       const s = get()
-      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl })
+      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl, darkMode: s.darkMode })
     },
 
     setImageUrl: (imageUrl: string) => {
       set({ imageUrl, mode: 'image' })
       const s = get()
-      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl })
+      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl, darkMode: s.darkMode })
+    },
+
+    toggleDarkMode: () => {
+      const next = !get().darkMode
+      set({ darkMode: next })
+      const s = get()
+      persist({ mode: s.mode, color: s.color, gradient: s.gradient, imageUrl: s.imageUrl, darkMode: s.darkMode })
     },
 
     reset: () => {

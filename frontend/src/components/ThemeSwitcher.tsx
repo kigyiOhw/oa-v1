@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Paintbrush, X } from 'lucide-react'
+import { Moon, Palette, Sun, X } from 'lucide-react'
 import { useThemeStore, type ThemeMode } from '../stores/theme'
 
 const PRESET_COLORS = [
@@ -22,7 +22,7 @@ const PRESET_GRADIENTS = [
 
 export default function ThemeSwitcher() {
   const { t } = useTranslation()
-  const { mode, color, gradient, imageUrl, setColor, setGradient, setImageUrl, setMode, reset } = useThemeStore()
+  const { mode, color, gradient, imageUrl, darkMode, setColor, setGradient, setImageUrl, setMode, toggleDarkMode, reset } = useThemeStore()
   const [open, setOpen] = useState(false)
   const [urlInput, setUrlInput] = useState(imageUrl)
 
@@ -36,17 +36,17 @@ export default function ThemeSwitcher() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-50 rounded-full bg-white p-3 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow"
+        className="fixed bottom-6 right-6 z-50 rounded-full bg-white dark:bg-card p-3 shadow-lg border border-gray-200 dark:border-border hover:shadow-xl transition-shadow"
         title={t('theme.title')}
       >
-        <Paintbrush size={20} className="text-gray-600" />
+        <Palette size={20} className="text-gray-600" />
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 rounded-lg bg-white shadow-xl border border-gray-200">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <span className="font-semibold text-sm text-gray-900">{t('theme.title')}</span>
-            <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed bottom-20 right-6 z-50 w-80 rounded-lg bg-white dark:bg-card shadow-xl border border-gray-200 dark:border-border">
+          <div className="flex items-center justify-between border-b dark:border-border px-4 py-3">
+            <span className="font-semibold text-sm text-gray-900 dark:text-foreground">{t('theme.title')}</span>
+            <button onClick={() => setOpen(false)} className="text-gray-400 dark:text-muted-foreground hover:text-gray-600 dark:hover:text-foreground">
               <X size={16} />
             </button>
           </div>
@@ -84,10 +84,17 @@ export default function ThemeSwitcher() {
             )}
           </div>
 
-          <div className="border-t px-4 py-3">
+          <div className="border-t px-4 py-3 space-y-2">
+            <button
+              onClick={toggleDarkMode}
+              className="w-full flex items-center justify-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            >
+              {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+              {darkMode ? t('theme.lightMode') : t('theme.darkMode')}
+            </button>
             <button
               onClick={() => { reset(); setUrlInput('') }}
-              className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+              className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               {t('theme.reset')}
             </button>
@@ -153,13 +160,13 @@ function ImagePanel({
 }) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs text-gray-500">{t('theme.customUrl')}</label>
+      <label className="block text-xs text-gray-500 dark:text-muted-foreground">{t('theme.customUrl')}</label>
       <input
         type="text"
         value={urlInput}
         onChange={(e) => onUrlChange(e.target.value)}
         placeholder="https://example.com/bg.jpg"
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        className="w-full rounded-md border border-gray-300 dark:border-border bg-background dark:text-foreground px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
       />
       <button
         onClick={onApply}

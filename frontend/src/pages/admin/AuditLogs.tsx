@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 const ACTIONS = ['', 'create', 'update', 'delete']
 const RESOURCE_TYPES = [
@@ -36,18 +38,22 @@ export default function AuditLogs() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
 
   const pageSize = 20
 
   const fetchData = async () => {
-    const params: Record<string, unknown> = { page, page_size: pageSize }
-    if (action) params.action = action
-    if (resourceType) params.resource_type = resourceType
-    if (startDate) params.start_date = new Date(startDate).toISOString()
-    if (endDate) params.end_date = new Date(endDate).toISOString()
-    const res = await auditApi.list(params)
-    setItems(res.data.items)
-    setTotal(res.data.total)
+    try {
+      const params: Record<string, unknown> = { page, page_size: pageSize }
+      if (action) params.action = action
+      if (resourceType) params.resource_type = resourceType
+      if (startDate) params.start_date = new Date(startDate).toISOString()
+      if (endDate) params.end_date = new Date(endDate).toISOString()
+      const res = await auditApi.list(params)
+      setItems(res.data.items)
+      setTotal(res.data.total)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => {
@@ -134,12 +140,26 @@ export default function AuditLogs() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                </TableRow>
+              ))
+            ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-400 py-6">{t('common.noData')}</TableCell>
+                <TableCell colSpan={7}>
+                  <EmptyState title={t('common.noData')} />
+                </TableCell>
               </TableRow>
-            )}
-            {items.map((item) => (
+            ) : (
+              items.map((item) => (
               <>
                 <TableRow key={item.id}>
                   <TableCell className="whitespace-nowrap text-gray-500 text-xs">
@@ -177,7 +197,7 @@ export default function AuditLogs() {
                   </TableRow>
                 )}
               </>
-            ))}
+            )))}
           </TableBody>
         </Table>
       </div>
