@@ -77,6 +77,7 @@ class WorkflowTaskOut(BaseModel):
     assignee_id: int
     status: str
     comment: str | None = None
+    chain_index: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -96,6 +97,16 @@ class WorkflowHistoryOut(BaseModel):
     comment: str | None = None
     operator_id: int
     created_at: datetime
+
+
+# -- Validation --
+class ValidateDefinitionRequest(BaseModel):
+    definition: dict
+
+
+class ValidateDefinitionResponse(BaseModel):
+    valid: bool
+    errors: list[str] = []
 
 
 # -- Paginated responses --

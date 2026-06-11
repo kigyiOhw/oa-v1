@@ -8,6 +8,8 @@ from app.schemas.workflow import (
     WorkflowDefCreate,
     WorkflowDefOut,
     WorkflowDefUpdate,
+    ValidateDefinitionRequest,
+    ValidateDefinitionResponse,
 )
 from app.services.workflow import WorkflowEngineService
 
@@ -58,6 +60,15 @@ async def update_definition(
 ) -> WorkflowDefOut:
     service = WorkflowEngineService(db)
     return await service.update_definition(def_id, data)
+
+
+@router.post("/validate", response_model=ValidateDefinitionResponse)
+async def validate_definition(
+    data: ValidateDefinitionRequest,
+    _current_user: CurrentUser,
+) -> ValidateDefinitionResponse:
+    valid, errors = WorkflowEngineService.validate_definition(data.definition)
+    return ValidateDefinitionResponse(valid=valid, errors=errors)
 
 
 @router.delete("/{def_id}", status_code=status.HTTP_204_NO_CONTENT)

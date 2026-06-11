@@ -547,4 +547,512 @@ async def test_instance_detail_with_history(client: AsyncClient, db_session: Asy
     data = resp.json()
     assert len(data["history"]) >= 1
     assert data["history"][0]["action"] == "submit"
+
+
+# -- Conditional Routing --
+
+CONDITION_DEFINITION = {
+    "nodes": [
+        {"id": "start", "type": "start", "label": "Submit"},
+        {"id": "amount_check", "type": "condition", "label": "Amount Check"},
+        {"id": "manager_approve", "type": "approval", "label": "Manager Approval", "assignee_type": "manager"},
+        {"id": "director_approve", "type": "approval", "label": "Director Approval", "assignee_type": "role", "assignee_value": "director"},
+        {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
+        {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
+    ],
+    "transitions": [
+        {"from": "start", "action": "submit", "to": "amount_check"},
+        {"from": "amount_check", "action": "default", "to": "manager_approve", "conditions": [{"field": "amount", "operator": "<=", "value": 5000}]},
+        {"from": "amount_check", "action": "default", "to": "director_approve", "conditions": [{"field": "amount", "operator": ">", "value": 5000}]},
+        {"from": "manager_approve", "action": "approve", "to": "end_approved"},
+        {"from": "manager_approve", "action": "reject", "to": "end_rejected"},
+        {"from": "director_approve", "action": "approve", "to": "end_approved"},
+        {"from": "director_approve", "action": "reject", "to": "end_rejected"},
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_conditional_routing_low_amount(client: AsyncClient, db_session: AsyncSession):
+    """Amount <= 5000 routes to manager approval."""
+    su = await create_superuser(db_session, "wfcond1", "wfcond1@test.com")
+    manager = await create_user(db_session, "condmgr1", "condmgr1@test.com")
+    employee = await create_user(db_session, "condemp1", "condemp1@test.com", manager_id=manager.id)
+    admin_token = await login(client, "wfcond1")
+    emp_token = await login(client, "condemp1")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "CondWF", "definition": CONDITION_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "Low Amount", "form_data": {"amount": 3000}},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    instance_id = instance.json()["id"]
+
+    # Task should go to manager
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {await login(client, 'condmgr1')}"})
+    assert len(tasks.json()["items"]) == 1
+    task = tasks.json()["items"][0]
+    assert task["node_id"] == "manager_approve"
+
+
+@pytest.mark.asyncio
+async def test_conditional_routing_high_amount(client: AsyncClient, db_session: AsyncSession):
+    """Amount > 5000 routes to director approval."""
+    su = await create_superuser(db_session, "wfcond2", "wfcond2@test.com")
+    manager = await create_user(db_session, "condmgr2", "condmgr2@test.com")
+    employee = await create_user(db_session, "condemp2", "condemp2@test.com", manager_id=manager.id)
+    # Create director role user
+    from app.models.user import Role
+    role = Role(name="director", description="Director")
+    db_session.add(role)
+    await db_session.commit()
+    director = await create_user(db_session, "conddir", "conddir@test.com")
+    await db_session.refresh(director, ["roles"])
+    director.roles.append(role)
+    await db_session.commit()
+
+    admin_token = await login(client, "wfcond2")
+    emp_token = await login(client, "condemp2")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "CondWF2", "definition": CONDITION_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "High Amount", "form_data": {"amount": 8000}},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    instance_id = instance.json()["id"]
+
+    # Task should go to director
+    dir_token = await login(client, "conddir")
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {dir_token}"})
+    assert len(tasks.json()["items"]) == 1
+    task = tasks.json()["items"][0]
+    assert task["node_id"] == "director_approve"
+
+
+@pytest.mark.asyncio
+async def test_conditional_routing_no_match(client: AsyncClient, db_session: AsyncSession):
+    """No matching condition should raise 400."""
+    su = await create_superuser(db_session, "wfcond3", "wfcond3@test.com")
+    employee = await create_user(db_session, "condemp3", "condemp3@test.com")
+    admin_token = await login(client, "wfcond3")
+    emp_token = await login(client, "condemp3")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "CondWF3", "definition": CONDITION_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    # Missing amount field → no condition matches
+    resp = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "No Amount", "form_data": {}},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    assert resp.status_code == 400
+
+
+# -- Multi-level Approval Chain --
+
+CHAIN_DEFINITION = {
+    "nodes": [
+        {"id": "start", "type": "start", "label": "Submit"},
+        {"id": "chain_approval", "type": "approval", "label": "Manager Chain", "assignee_type": "chain", "assignee_chain": [
+            {"type": "manager"},
+            {"type": "role", "value": "director"},
+        ]},
+        {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
+        {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
+    ],
+    "transitions": [
+        {"from": "start", "action": "submit", "to": "chain_approval"},
+        {"from": "chain_approval", "action": "approve", "to": "end_approved"},
+        {"from": "chain_approval", "action": "reject", "to": "end_rejected"},
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_approval_chain_full_approve(client: AsyncClient, db_session: AsyncSession):
+    """Chain [manager, director]: both approve → instance approved."""
+    su = await create_superuser(db_session, "wfch1", "wfch1@test.com")
+    from app.models.user import Role
+    role = Role(name="director", description="Director")
+    db_session.add(role)
+    await db_session.commit()
+    manager = await create_user(db_session, "chmgr1", "chmgr1@test.com")
+    director = await create_user(db_session, "chdir1", "chdir1@test.com")
+    await db_session.refresh(director, ["roles"])
+    director.roles.append(role)
+    await db_session.commit()
+    employee = await create_user(db_session, "chemp1", "chemp1@test.com", manager_id=manager.id)
+    admin_token = await login(client, "wfch1")
+    emp_token = await login(client, "chemp1")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "ChainWF", "definition": CHAIN_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "Chain Test"},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    instance_id = instance.json()["id"]
+
+    # First task goes to manager
+    mgr_token = await login(client, "chmgr1")
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {mgr_token}"})
+    assert len(tasks.json()["items"]) == 1
+    task1 = tasks.json()["items"][0]
+    assert task1["chain_index"] == 0
+
+    # Manager approves
+    await client.post(
+        f"/api/v1/workflow/tasks/{task1['id']}/approve",
+        json={"comment": "Manager OK"},
+        headers={"Authorization": f"Bearer {mgr_token}"},
+    )
+
+    # Second task goes to director
+    dir_token = await login(client, "chdir1")
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {dir_token}"})
+    assert len(tasks.json()["items"]) == 1
+    task2 = tasks.json()["items"][0]
+    assert task2["chain_index"] == 1
+
+    # Director approves → instance complete
+    await client.post(
+        f"/api/v1/workflow/tasks/{task2['id']}/approve",
+        json={"comment": "Director OK"},
+        headers={"Authorization": f"Bearer {dir_token}"},
+    )
+
+    instance_resp = await client.get(
+        f"/api/v1/workflow/instances/{instance_id}",
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    assert instance_resp.json()["status"] == "approved"
+
+
+@pytest.mark.asyncio
+async def test_approval_chain_reject_at_first_level(client: AsyncClient, db_session: AsyncSession):
+    """Chain reject at first level → instance rejected."""
+    su = await create_superuser(db_session, "wfch2", "wfch2@test.com")
+    manager = await create_user(db_session, "chmgr2", "chmgr2@test.com")
+    employee = await create_user(db_session, "chemp2", "chemp2@test.com", manager_id=manager.id)
+    admin_token = await login(client, "wfch2")
+    emp_token = await login(client, "chemp2")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "ChainWF2", "definition": CHAIN_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "Chain Reject"},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    instance_id = instance.json()["id"]
+
+    mgr_token = await login(client, "chmgr2")
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {mgr_token}"})
+    task1 = tasks.json()["items"][0]
+
+    await client.post(
+        f"/api/v1/workflow/tasks/{task1['id']}/reject",
+        json={"comment": "Manager rejects"},
+        headers={"Authorization": f"Bearer {mgr_token}"},
+    )
+
+    instance_resp = await client.get(
+        f"/api/v1/workflow/instances/{instance_id}",
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    assert instance_resp.json()["status"] == "rejected"
+
+
+# -- Validation --
+
+
+@pytest.mark.asyncio
+async def test_validate_definition_endpoint(client: AsyncClient, db_session: AsyncSession):
+    su = await create_superuser(db_session, "wfval1", "wfval1@test.com")
+    token = await login(client, "wfval1")
+
+    # Valid definition
+    resp = await client.post(
+        "/api/v1/workflow-defs/validate",
+        json={"definition": SAMPLE_DEFINITION},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is True
+    assert resp.json()["errors"] == []
+
+    # Dead loop
+    loop_def = {
+        "nodes": [
+            {"id": "start", "type": "start", "label": "S"},
+            {"id": "a", "type": "approval", "label": "A", "assignee_type": "initiator"},
+            {"id": "end", "type": "end", "label": "E", "outcome": "approved"},
+        ],
+        "transitions": [
+            {"from": "start", "action": "submit", "to": "a"},
+            {"from": "a", "action": "approve", "to": "a"},
+        ],
+    }
+    resp = await client.post(
+        "/api/v1/workflow-defs/validate",
+        json={"definition": loop_def},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is False
+    assert "Dead loop" in resp.json()["errors"][0]
+
+    # Orphaned node
+    orphan_def = {
+        "nodes": [
+            {"id": "start", "type": "start", "label": "S"},
+            {"id": "a", "type": "approval", "label": "A", "assignee_type": "initiator"},
+            {"id": "orphan", "type": "end", "label": "O", "outcome": "approved"},
+            {"id": "end", "type": "end", "label": "E", "outcome": "approved"},
+        ],
+        "transitions": [
+            {"from": "start", "action": "submit", "to": "a"},
+            {"from": "a", "action": "approve", "to": "end"},
+        ],
+    }
+    resp = await client.post(
+        "/api/v1/workflow-defs/validate",
+        json={"definition": orphan_def},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is False
+    assert "Orphaned" in resp.json()["errors"][0]
+
+    # Condition node with < 2 outgoing edges
+    bad_cond_def = {
+        "nodes": [
+            {"id": "start", "type": "start", "label": "S"},
+            {"id": "cond", "type": "condition", "label": "C"},
+            {"id": "end", "type": "end", "label": "E", "outcome": "approved"},
+        ],
+        "transitions": [
+            {"from": "start", "action": "submit", "to": "cond"},
+            {"from": "cond", "action": "default", "to": "end"},
+        ],
+    }
+    resp = await client.post(
+        "/api/v1/workflow-defs/validate",
+        json={"definition": bad_cond_def},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["valid"] is False
+    assert "at least 2" in resp.json()["errors"][0]
+
+
+NESTED_CONDITION_DEFINITION = {
+    "nodes": [
+        {"id": "start", "type": "start", "label": "Submit"},
+        {"id": "amount_check", "type": "condition", "label": "Amount Check"},
+        {"id": "manager_approve", "type": "approval", "label": "Manager Approval", "assignee_type": "manager"},
+        {"id": "director_approve", "type": "approval", "label": "Director Approval", "assignee_type": "role", "assignee_value": "director"},
+        {"id": "end_approved", "type": "end", "label": "Approved", "outcome": "approved"},
+        {"id": "end_rejected", "type": "end", "label": "Rejected", "outcome": "rejected"},
+    ],
+    "transitions": [
+        {"from": "start", "action": "submit", "to": "amount_check"},
+        {
+            "from": "amount_check",
+            "action": "default",
+            "to": "director_approve",
+            "conditions": {
+                "operator": "AND",
+                "rules": [
+                    {"field": "amount", "operator": ">", "value": 5000},
+                    {
+                        "operator": "OR",
+                        "rules": [
+                            {"field": "department", "operator": "==", "value": "IT"},
+                            {"field": "department", "operator": "==", "value": "Finance"},
+                        ],
+                    },
+                ],
+            },
+        },
+        {"from": "amount_check", "action": "default", "to": "manager_approve"},
+        {"from": "manager_approve", "action": "approve", "to": "end_approved"},
+        {"from": "manager_approve", "action": "reject", "to": "end_rejected"},
+        {"from": "director_approve", "action": "approve", "to": "end_approved"},
+        {"from": "director_approve", "action": "reject", "to": "end_rejected"},
+    ],
+}
+
+
+@pytest.mark.asyncio
+async def test_nested_conditions_and_or(client: AsyncClient, db_session: AsyncSession):
+    """Nested AND/OR: amount > 5000 AND (department == IT OR department == Finance) → director."""
+    su = await create_superuser(db_session, "wfnest1", "wfnest1@test.com")
+    from app.models.user import Role
+    role = Role(name="director", description="Director")
+    db_session.add(role)
+    await db_session.commit()
+    manager = await create_user(db_session, "nestmgr1", "nestmgr1@test.com")
+    director = await create_user(db_session, "nestdir1", "nestdir1@test.com")
+    await db_session.refresh(director, ["roles"])
+    director.roles.append(role)
+    await db_session.commit()
+    employee = await create_user(db_session, "nestemp1", "nestemp1@test.com", manager_id=manager.id)
+    admin_token = await login(client, "wfnest1")
+    emp_token = await login(client, "nestemp1")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "NestedCondWF", "definition": NESTED_CONDITION_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    # Case 1: amount=8000, dept=IT → matches nested AND/OR → director
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "Nested OK", "form_data": {"amount": 8000, "department": "IT"}},
+        headers={"Authorization": f"Bearer {emp_token}"},
+    )
+    dir_token = await login(client, "nestdir1")
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {dir_token}"})
+    assert len(tasks.json()["items"]) == 1
+    assert tasks.json()["items"][0]["node_id"] == "director_approve"
+
+    # Case 2: amount=8000, dept=HR → fails OR branch → falls through to manager
+    employee2 = await create_user(db_session, "nestemp2", "nestemp2@test.com", manager_id=manager.id)
+    emp2_token = await login(client, "nestemp2")
+    instance2 = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "Nested Fail", "form_data": {"amount": 8000, "department": "HR"}},
+        headers={"Authorization": f"Bearer {emp2_token}"},
+    )
+    mgr_token = await login(client, "nestmgr1")
+    tasks2 = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {mgr_token}"})
+    # Manager gets only the second instance's task (first went to director)
+    assert len(tasks2.json()["items"]) == 1
+    assert tasks2.json()["items"][0]["node_id"] == "manager_approve"
+
+
+# -- Backward Compatibility --
+
+
+@pytest.mark.asyncio
+async def test_old_definition_still_works(client: AsyncClient, db_session: AsyncSession):
+    """Definitions without conditions or assignee_chain continue to work."""
+    su = await create_superuser(db_session, "wfbc1", "wfbc1@test.com")
+    regular = await create_user(db_session, "bccuser1", "bccuser1@test.com")
+    admin_token = await login(client, "wfbc1")
+    user_token = await login(client, "bccuser1")
+
+    created = await client.post(
+        "/api/v1/workflow-defs",
+        json={"name": "BC WF", "definition": SAMPLE_DEFINITION},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    def_id = created.json()["id"]
+
+    instance = await client.post(
+        "/api/v1/workflow/instances",
+        json={"workflow_def_id": def_id, "title": "BC Test"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert instance.status_code == 201
+
+    tasks = await client.get("/api/v1/workflow/tasks", headers={"Authorization": f"Bearer {user_token}"})
+    task = tasks.json()["items"][0]
+    assert task.get("chain_index") is None
+
+    await client.post(
+        f"/api/v1/workflow/tasks/{task['id']}/approve",
+        json={},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+
+    instance_resp = await client.get(
+        f"/api/v1/workflow/instances/{instance.json()['id']}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    data = instance_resp.json()
+    assert data["status"] == "approved"
     assert len(data["tasks"]) >= 1
+
+
+# -- Password Change --
+
+
+@pytest.mark.asyncio
+async def test_change_password_success(client: AsyncClient, db_session: AsyncSession):
+    user = await create_user(db_session, "pwduser1", "pwd1@test.com")
+    token = await login(client, "pwduser1")
+
+    resp = await client.put(
+        "/api/v1/auth/me/password",
+        json={"old_password": "password123", "new_password": "newpass99", "confirm_password": "newpass99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+
+    # Old password no longer works
+    resp_old = await client.post("/api/v1/auth/login", json={"username": "pwduser1", "password": "password123"})
+    assert resp_old.status_code == 401
+
+    # New password works
+    resp_new = await client.post("/api/v1/auth/login", json={"username": "pwduser1", "password": "newpass99"})
+    assert resp_new.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_change_password_wrong_old(client: AsyncClient, db_session: AsyncSession):
+    user = await create_user(db_session, "pwduser2", "pwd2@test.com")
+    token = await login(client, "pwduser2")
+
+    resp = await client.put(
+        "/api/v1/auth/me/password",
+        json={"old_password": "wrongpass", "new_password": "newpass99", "confirm_password": "newpass99"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_mismatch(client: AsyncClient, db_session: AsyncSession):
+    user = await create_user(db_session, "pwduser3", "pwd3@test.com")
+    token = await login(client, "pwduser3")
+
+    resp = await client.put(
+        "/api/v1/auth/me/password",
+        json={"old_password": "password123", "new_password": "newpass99", "confirm_password": "different"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 422

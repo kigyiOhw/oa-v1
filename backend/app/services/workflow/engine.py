@@ -101,7 +101,35 @@ class WorkflowEngineService:
         await self.def_repo.delete(wf_def)
         logger.info("----------WorkflowEngineService.delete_definition, done, def_id=%s", def_id)
 
+    @staticmethod
+    def validate_definition(definition: dict) -> tuple[bool, list[str]]:
+        errors: list[str] = []
+        try:
+            WorkflowEngineService._validate_definition(definition)
+        except OAException as e:
+            errors.append(str(e.detail) if hasattr(e, "detail") else str(e))
+        except Exception as e:
+            errors.append(f"Validation error: {e}")
+        return len(errors) == 0, errors
+
     # -- workflow lifecycle --
+
+    @staticmethod
+    def _resolve_action_node(definition: dict, from_node_id: str, action: str, form_data: dict | None = None) -> dict:
+        """Follow transitions, auto-skipping condition nodes, until reaching a non-condition node."""
+        current_id = from_node_id
+        current_action = action
+        visited = set()
+        while True:
+            transition = WorkflowEngineService._find_transition(definition, current_id, current_action, form_data)
+            next_node = WorkflowEngineService._get_node(definition, transition["to"])
+            if next_node.get("type") != "condition":
+                return next_node
+            current_id = next_node["id"]
+            current_action = "default"
+            if current_id in visited:
+                raise OAException("Condition loop detected in definition", status_code=400)
+            visited.add(current_id)
 
     async def start_instance(self, user: User, data: StartInstanceRequest) -> WorkflowInstance:
         logger.info("----------WorkflowEngineService.start_instance, start, user_id=%s, def_id=%s, title=%s",
@@ -115,8 +143,7 @@ class WorkflowEngineService:
         start_node = self._find_start_node(definition)
         logger.info("----------WorkflowEngineService.start_instance, start_node=%s", start_node["id"])
 
-        transition = self._find_transition(definition, start_node["id"], "submit")
-        next_node = self._get_node(definition, transition["to"])
+        next_node = self._resolve_action_node(definition, start_node["id"], "submit", data.form_data)
         logger.info("----------WorkflowEngineService.start_instance, next_node=%s, type=%s",
                     next_node["id"], next_node.get("type"))
 
@@ -133,12 +160,14 @@ class WorkflowEngineService:
         logger.info("----------WorkflowEngineService.start_instance, resolving_assignee, node=%s, assignee_type=%s",
                     next_node["id"], next_node.get("assignee_type"))
         assignee_id = await self._resolve_assignee(next_node, user.id)
-        logger.info("----------WorkflowEngineService.start_instance, assignee_resolved, assignee_id=%s", assignee_id)
+        chain_index = 0 if next_node.get("assignee_type") == "chain" else None
+        logger.info("----------WorkflowEngineService.start_instance, assignee_resolved, assignee_id=%s, chain_index=%s", assignee_id, chain_index)
 
         task = WorkflowTask(
             instance_id=instance.id,
             node_id=next_node["id"],
             assignee_id=assignee_id,
+            chain_index=chain_index,
         )
         await self.task_repo.create(task)
         logger.info("----------WorkflowEngineService.start_instance, task_created, task_id=%s, assignee_id=%s",
@@ -197,8 +226,51 @@ class WorkflowEngineService:
                     instance.id, instance.current_node_id)
         definition = instance.workflow_def.definition
         current_node_id = instance.current_node_id
-        transition = self._find_transition(definition, current_node_id, action)
-        next_node = self._get_node(definition, transition["to"])
+
+        # Handle multi-level approval chain
+        current_node = self._get_node(definition, current_node_id)
+        if action == "approve" and task.chain_index is not None and current_node.get("assignee_type") == "chain":
+            chain = current_node.get("assignee_chain", [])
+            next_index = task.chain_index + 1
+            if next_index < len(chain):
+                # Chain continues: create next task at same node
+                task.status = action
+                task.comment = data.comment
+                await self.task_repo.update(task)
+                history = WorkflowHistory(
+                    instance_id=instance.id,
+                    node_id=current_node_id,
+                    action=action,
+                    comment=data.comment,
+                    operator_id=user.id,
+                )
+                await self.history_repo.create(history)
+
+                next_assignee_id = await self._resolve_chain_assignee(chain[next_index], instance.initiator_id)
+                new_task = WorkflowTask(
+                    instance_id=instance.id,
+                    node_id=current_node_id,
+                    assignee_id=next_assignee_id,
+                    chain_index=next_index,
+                )
+                await self.task_repo.create(new_task)
+                logger.info("----------WorkflowEngineService.process_task, chain_next_task_created, task_id=%s, assignee_id=%s, chain_index=%s",
+                            new_task.id, next_assignee_id, next_index)
+                await NotificationService.send_notification(
+                    self.session,
+                    user_id=next_assignee_id,
+                    type_="workflow",
+                    title="New Task",
+                    message=f"You have a new approval task: {instance.title}",
+                    reference_type="task",
+                    reference_id=new_task.id,
+                )
+                await self.instance_repo.update(instance)
+                logger.info("----------WorkflowEngineService.process_task, done_chain, task_id=%s, action=%s, instance=%s",
+                            task_id, action, instance.id)
+                return task
+
+        next_node = self._resolve_action_node(definition, current_node_id, action, instance.form_data)
         logger.info("----------WorkflowEngineService.process_task, transition, from=%s, action=%s, to=%s, type=%s",
                     current_node_id, action, next_node["id"], next_node.get("type"))
 
@@ -253,11 +325,13 @@ class WorkflowEngineService:
                         next_node["id"], next_node.get("assignee_type"))
             instance.current_node_id = next_node["id"]
             assignee_id = await self._resolve_assignee(next_node, instance.initiator_id)
-            logger.info("----------WorkflowEngineService.process_task, next_assignee_resolved, assignee_id=%s", assignee_id)
+            chain_index = 0 if next_node.get("assignee_type") == "chain" else None
+            logger.info("----------WorkflowEngineService.process_task, next_assignee_resolved, assignee_id=%s, chain_index=%s", assignee_id, chain_index)
             new_task = WorkflowTask(
                 instance_id=instance.id,
                 node_id=next_node["id"],
                 assignee_id=assignee_id,
+                chain_index=chain_index,
             )
             await self.task_repo.create(new_task)
             logger.info("----------WorkflowEngineService.process_task, next_task_created, task_id=%s, assignee_id=%s",
@@ -323,22 +397,30 @@ class WorkflowEngineService:
         logger.info("----------WorkflowEngineService.get_my_tasks, done, user_id=%s, total=%s", user.id, result[1])
         return result
 
-    async def get_instance_detail(self, instance_id: int) -> WorkflowInstance:
-        logger.info("----------WorkflowEngineService.get_instance_detail, start, instance_id=%s", instance_id)
+    async def get_instance_detail(self, user: User, instance_id: int) -> WorkflowInstance:
+        logger.info("----------WorkflowEngineService.get_instance_detail, start, instance_id=%s, user_id=%s", instance_id, user.id)
         instance = await self.instance_repo.get_by_id_with_all(instance_id)
         if not instance:
             logger.warning("----------WorkflowEngineService.get_instance_detail, not_found, instance_id=%s", instance_id)
             raise OAException("Instance not found", status_code=404)
+        if instance.initiator_id != user.id and not user.is_superuser:
+            has_task = await self.task_repo.has_task_in_instance(user.id, instance_id)
+            if not has_task:
+                logger.warning("----------WorkflowEngineService.get_instance_detail, access_denied, user_id=%s, instance_id=%s", user.id, instance_id)
+                raise OAException("Access denied", status_code=403)
         logger.info("----------WorkflowEngineService.get_instance_detail, done, instance_id=%s, status=%s",
                     instance_id, instance.status)
         return instance
 
-    async def get_task_detail(self, task_id: int) -> WorkflowTask:
-        logger.info("----------WorkflowEngineService.get_task_detail, start, task_id=%s", task_id)
+    async def get_task_detail(self, user: User, task_id: int) -> WorkflowTask:
+        logger.info("----------WorkflowEngineService.get_task_detail, start, task_id=%s, user_id=%s", task_id, user.id)
         task = await self.task_repo.get_by_id_with_instance(task_id)
         if not task:
             logger.warning("----------WorkflowEngineService.get_task_detail, not_found, task_id=%s", task_id)
             raise OAException("Task not found", status_code=404)
+        if task.assignee_id != user.id and not user.is_superuser:
+            logger.warning("----------WorkflowEngineService.get_task_detail, access_denied, user_id=%s, task_id=%s", user.id, task_id)
+            raise OAException("Access denied", status_code=403)
         logger.info("----------WorkflowEngineService.get_task_detail, done, task_id=%s, status=%s", task_id, task.status)
         return task
 
@@ -368,15 +450,65 @@ class WorkflowEngineService:
             raise OAException("Definition must have a start node", status_code=400)
         if "end" not in node_types:
             raise OAException("Definition must have an end node", status_code=400)
+
+        # Basic transition validation
+        valid_ops = {"==", "!=", ">", "<", ">=", "<=", "in", "contains"}
         for t in transitions:
             if t["from"] not in node_ids:
-                raise OAException(
-                    f"Transition 'from' node '{t['from']}' not found", status_code=400
-                )
+                raise OAException(f"Transition 'from' node '{t['from']}' not found", status_code=400)
             if t["to"] not in node_ids:
-                raise OAException(
-                    f"Transition 'to' node '{t['to']}' not found", status_code=400
-                )
+                raise OAException(f"Transition 'to' node '{t['to']}' not found", status_code=400)
+            conditions = t.get("conditions")
+            if conditions:
+                WorkflowEngineService._validate_conditions(conditions, valid_ops)
+
+        # Node-specific validation
+        for node in nodes:
+            ntype = node.get("type")
+            if ntype in ("approval", "task"):
+                atype = node.get("assignee_type")
+                if atype == "chain":
+                    chain = node.get("assignee_chain", [])
+                    if not chain:
+                        raise OAException(f"Node '{node['id']}' has assignee_type=chain but empty assignee_chain", status_code=400)
+                    for elem in chain:
+                        if elem.get("type") not in ("initiator", "manager", "role", "user"):
+                            raise OAException(f"Invalid chain element type: {elem.get('type')}", status_code=400)
+                elif atype not in ("initiator", "manager", "role", "user"):
+                    raise OAException(f"Node '{node['id']}' must have a valid assignee_type or assignee_chain", status_code=400)
+            elif ntype == "end":
+                if not node.get("outcome"):
+                    raise OAException(f"End node '{node['id']}' must have an outcome", status_code=400)
+            elif ntype == "condition":
+                out_count = sum(1 for t in transitions if t["from"] == node["id"])
+                if out_count < 2:
+                    raise OAException(f"Condition node '{node['id']}' must have at least 2 outgoing transitions", status_code=400)
+
+        # Dead-loop detection (DFS)
+        adj = {nid: [] for nid in node_ids}
+        for t in transitions:
+            adj[t["from"]].append(t["to"])
+
+        start_node = next((n for n in nodes if n["type"] == "start"), None)
+        if start_node:
+            visited = set()
+            path = set()
+            def dfs(node_id: str):
+                if node_id in path:
+                    raise OAException(f"Dead loop detected involving node '{node_id}'", status_code=400)
+                if node_id in visited:
+                    return
+                visited.add(node_id)
+                path.add(node_id)
+                for next_id in adj.get(node_id, []):
+                    dfs(next_id)
+                path.remove(node_id)
+            dfs(start_node["id"])
+
+            # Orphaned nodes detection
+            unreachable = node_ids - visited
+            if unreachable:
+                raise OAException(f"Orphaned nodes detected: {', '.join(sorted(unreachable))}", status_code=400)
 
     @staticmethod
     def _find_start_node(definition: dict) -> dict:
@@ -386,15 +518,140 @@ class WorkflowEngineService:
         raise OAException("No start node found in definition", status_code=400)
 
     @staticmethod
-    def _find_transition(definition: dict, from_node_id: str, action: str) -> dict:
+    def _find_transition(definition: dict, from_node_id: str, action: str, form_data: dict | None = None) -> dict:
         logger.info("----------WorkflowEngineService._find_transition, from=%s, action=%s", from_node_id, action)
-        for t in definition["transitions"]:
-            if t["from"] == from_node_id and t["action"] == action:
+        candidates = [t for t in definition["transitions"] if t["from"] == from_node_id and t["action"] == action]
+        if not candidates:
+            raise OAException(
+                f"No transition found from '{from_node_id}' with action '{action}'",
+                status_code=400,
+            )
+        for t in candidates:
+            conditions = t.get("conditions")
+            if not conditions:
+                return t
+            if form_data is not None and WorkflowEngineService._evaluate_conditions(form_data, conditions):
                 return t
         raise OAException(
-            f"No transition found from '{from_node_id}' with action '{action}'",
+            f"No matching transition from '{from_node_id}' with action '{action}'",
             status_code=400,
         )
+
+    @staticmethod
+    def _evaluate_conditions(form_data: dict, conditions: dict | list[dict]) -> bool:
+        """Evaluate conditions with nested AND/OR group support.
+
+        Supports:
+        - Flat list of rules (legacy, treated as AND):
+          [{"field": "amount", "operator": ">", "value": 5000}, ...]
+        - Group object with operator + rules:
+          {"operator": "AND", "rules": [...]}
+        - Nested groups:
+          {"operator": "AND", "rules": [
+              {"field": "amount", "operator": ">", "value": 5000},
+              {"operator": "OR", "rules": [...]}
+          ]}
+        """
+        if isinstance(conditions, list):
+            # Legacy flat list — treat as AND
+            return all(
+                WorkflowEngineService._evaluate_condition(form_data, c) for c in conditions
+            )
+
+        if isinstance(conditions, dict):
+            # Distinguish leaf dict (has "field") from group dict (has "rules")
+            if "field" in conditions:
+                return WorkflowEngineService._evaluate_condition(form_data, conditions)
+            operator = conditions.get("operator", "AND")
+            rules = conditions.get("rules", [])
+            if operator == "AND":
+                for rule in rules:
+                    if not WorkflowEngineService._evaluate_conditions(form_data, rule):
+                        return False
+                return True
+            elif operator == "OR":
+                for rule in rules:
+                    if WorkflowEngineService._evaluate_conditions(form_data, rule):
+                        return True
+                return False
+            else:
+                return False
+
+        return False
+
+    @staticmethod
+    def _evaluate_condition(form_data: dict, condition: dict) -> bool:
+        """Evaluate a single leaf condition."""
+        field = condition.get("field")
+        op = condition.get("operator")
+        value = condition.get("value")
+        actual = form_data.get(field) if form_data else None
+        return WorkflowEngineService._compare(actual, op, value)
+
+    @staticmethod
+    def _compare(actual: any, op: str, expected: any) -> bool:
+        try:
+            if op == "==":
+                return actual == expected
+            elif op == "!=":
+                return actual != expected
+            elif op == ">":
+                return float(actual) > float(expected)
+            elif op == "<":
+                return float(actual) < float(expected)
+            elif op == ">=":
+                return float(actual) >= float(expected)
+            elif op == "<=":
+                return float(actual) <= float(expected)
+            elif op == "in":
+                return actual in expected if isinstance(expected, (list, tuple, set)) else str(actual) in str(expected)
+            elif op == "contains":
+                return expected in actual if isinstance(actual, (list, tuple, set, str)) else str(expected) in str(actual)
+            else:
+                return False
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def _validate_conditions(conditions: dict | list, valid_ops: set[str]) -> None:
+        """Recursively validate conditions structure.
+
+        Supports:
+        - Flat list of leaf rules: [{"field": "x", "operator": ">", "value": 1}, ...]
+        - Group object: {"operator": "AND", "rules": [...]}
+        - Nested groups.
+        """
+        if isinstance(conditions, list):
+            if len(conditions) == 0:
+                raise OAException("Transition conditions must be a non-empty list", status_code=400)
+            for c in conditions:
+                if not isinstance(c, dict):
+                    raise OAException("Condition must be an object", status_code=400)
+                if c.get("operator") not in valid_ops:
+                    raise OAException(f"Invalid condition operator: {c.get('operator')}", status_code=400)
+                if "field" not in c:
+                    raise OAException("Condition must have a 'field'", status_code=400)
+        elif isinstance(conditions, dict):
+            # Distinguish leaf dict (has "field") from group dict (has "rules")
+            if "field" in conditions:
+                # Leaf rule in dict form
+                op = conditions.get("operator")
+                if op not in valid_ops:
+                    raise OAException(f"Invalid condition operator: {op}", status_code=400)
+                if "field" not in conditions:
+                    raise OAException("Condition must have a 'field'", status_code=400)
+            else:
+                # Group
+                operator = conditions.get("operator")
+                if operator not in ("AND", "OR"):
+                    raise OAException(f"Condition group operator must be AND or OR, got: {operator}", status_code=400)
+                rules = conditions.get("rules", [])
+                if not rules:
+                    raise OAException("Condition group must have non-empty 'rules'", status_code=400)
+                for rule in rules:
+                    WorkflowEngineService._validate_conditions(rule, valid_ops)
+        else:
+            raise OAException("Conditions must be a list or an object", status_code=400)
 
     @staticmethod
     def _get_node(definition: dict, node_id: str) -> dict:
@@ -446,9 +703,22 @@ class WorkflowEngineService:
             logger.info("----------WorkflowEngineService._resolve_assignee, resolved=user, user_id=%s", assignee_value)
             return int(assignee_value)
 
+        elif assignee_type == "chain":
+            chain = node.get("assignee_chain", [])
+            if not chain:
+                raise OAException("assignee_chain is empty for chain type", status_code=400)
+            logger.info("----------WorkflowEngineService._resolve_assignee, resolved=chain_first, type=%s", chain[0].get("type"))
+            return await self._resolve_chain_assignee(chain[0], initiator_id)
+
         else:
             logger.error("----------WorkflowEngineService._resolve_assignee, unknown_type, type=%s", assignee_type)
             raise OAException(f"Unknown assignee_type: {assignee_type}", status_code=400)
+
+    async def _resolve_chain_assignee(self, chain_elem: dict, initiator_id: int) -> int:
+        elem_type = chain_elem.get("type")
+        elem_value = chain_elem.get("value")
+        fake_node = {"assignee_type": elem_type, "assignee_value": elem_value}
+        return await self._resolve_assignee(fake_node, initiator_id)
 
     async def _pick_least_loaded(self, user_ids: list[int]) -> int:
         logger.info("----------WorkflowEngineService._pick_least_loaded, candidates=%s", user_ids)

@@ -59,7 +59,7 @@ async def get_instance_detail(
 ) -> WorkflowInstanceDetailOut:
     logger.info("----------workflow.get_instance_detail, start, instance_id=%s, user_id=%s", instance_id, current_user.id)
     service = WorkflowEngineService(db)
-    result = await service.get_instance_detail(instance_id)
+    result = await service.get_instance_detail(current_user, instance_id)
     logger.info("----------workflow.get_instance_detail, done, instance_id=%s", instance_id)
     return result
 
@@ -104,7 +104,7 @@ async def get_task_detail(
 ) -> WorkflowTaskDetailOut:
     logger.info("----------workflow.get_task_detail, start, task_id=%s, user_id=%s", task_id, current_user.id)
     service = WorkflowEngineService(db)
-    result = await service.get_task_detail(task_id)
+    result = await service.get_task_detail(current_user, task_id)
     logger.info("----------workflow.get_task_detail, done, task_id=%s", task_id)
     return result
 

@@ -84,6 +84,15 @@ class WorkflowTaskRepository:
         )
         return result.scalar() or 0
 
+    async def has_task_in_instance(self, user_id: int, instance_id: int) -> bool:
+        result = await self.session.execute(
+            select(func.count(WorkflowTask.id)).where(
+                WorkflowTask.assignee_id == user_id,
+                WorkflowTask.instance_id == instance_id,
+            )
+        )
+        return (result.scalar() or 0) > 0
+
     async def create(self, task: WorkflowTask) -> WorkflowTask:
         self.session.add(task)
         await self.session.flush()
