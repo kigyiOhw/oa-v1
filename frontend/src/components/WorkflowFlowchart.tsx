@@ -120,6 +120,14 @@ function getNodeStatusColor(
     return { bg: '#dcfce7', border: '#22c55e', text: '#166534' }
   }
 
+  // Condition node
+  if (nodeType === 'condition') {
+    if (isVisited) {
+      return { bg: '#fef9c3', border: '#eab308', text: '#854d0e' }
+    }
+    return { bg: '#fefce8', border: '#fde047', text: '#a16207' }
+  }
+
   // Approval / task nodes
   if (isCurrent) {
     return { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af' }

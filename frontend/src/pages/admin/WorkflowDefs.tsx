@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ReactFlowProvider } from '@xyflow/react'
 import { useToast } from '@/components/ui/toast'
 import { workflowDefApi, DefinitionItem } from '../../api/workflow'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -8,6 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import WorkflowEditor from '@/components/workflow/WorkflowEditor'
+import type { WorkflowDefinition } from '@/components/workflow/types'
 
 export default function WorkflowDefs() {
   const { t } = useTranslation()
@@ -16,6 +20,7 @@ export default function WorkflowDefs() {
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<DefinitionItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchDefs = async () => {
     try {
@@ -29,14 +34,20 @@ export default function WorkflowDefs() {
     fetchDefs()
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('workflowDefs.deleteConfirm'))) return
-    try {
-      await workflowDefApi.delete(id)
-      fetchDefs()
-    } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Delete failed')
-    }
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('workflowDefs.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await workflowDefApi.delete(id)
+          fetchDefs()
+        } catch (e: any) {
+          toast.error(e.response?.data?.detail || 'Delete failed')
+        }
+      },
+    })
   }
 
   return (
@@ -114,6 +125,16 @@ export default function WorkflowDefs() {
           onSaved={() => { setEditing(null); fetchDefs() }}
         />
       )}
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </div>
   )
 }
@@ -128,25 +149,34 @@ function DefFormModal({
   onSaved: () => void
 }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [name, setName] = useState(def?.name || '')
   const [description, setDescription] = useState(def?.description || '')
   const [icon, setIcon] = useState(def?.icon || '')
-  const [definitionStr, setDefinitionStr] = useState(
-    def ? JSON.stringify(def.definition, null, 2) : JSON.stringify(defaultDefinition(), null, 2)
+  const [definition, setDefinition] = useState<WorkflowDefinition>(
+    (def?.definition as unknown as WorkflowDefinition) || defaultDefinition()
   )
   const [isActive, setIsActive] = useState(def?.is_active ?? true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showSource, setShowSource] = useState(false)
+
+  const handleValidate = async () => {
+    setError('')
+    try {
+      const res = await workflowDefApi.validate(definition as unknown as Record<string, unknown>)
+      if (res.data.valid) {
+        toast.success('Definition is valid')
+      } else {
+        setError(res.data.errors.join('; '))
+      }
+    } catch (e: any) {
+      setError(e.response?.data?.detail || 'Validation failed')
+    }
+  }
 
   const handleSave = async () => {
     setError('')
-    let definition: Record<string, unknown>
-    try {
-      definition = JSON.parse(definitionStr)
-    } catch {
-      setError(t('workflowDefs.invalidJson'))
-      return
-    }
     setSaving(true)
     try {
       if (def) {
@@ -154,7 +184,7 @@ function DefFormModal({
           name: name || undefined,
           description: description || null,
           icon: icon || null,
-          definition,
+          definition: definition as unknown as Record<string, unknown>,
           is_active: isActive,
         })
       } else {
@@ -162,7 +192,7 @@ function DefFormModal({
           name,
           description: description || null,
           icon: icon || null,
-          definition,
+          definition: definition as unknown as Record<string, unknown>,
         })
       }
       setSaving(false)
@@ -177,23 +207,25 @@ function DefFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[600px] max-h-[85vh] overflow-auto">
+      <div className="bg-white rounded-lg p-6 w-[960px] max-w-[95vw] max-h-[90vh] overflow-auto flex flex-col">
         <h2 className="text-lg font-bold mb-4">{title}</h2>
         {error && <div className="mb-3 text-sm text-red-600 bg-red-50 rounded px-3 py-2">{error}</div>}
-        <label className="block mb-2 text-sm">
-          {t('workflowDefs.name')}
-          <Input className="mt-0.5" value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <label className="block mb-2 text-sm">
-          {t('workflowDefs.description')}
-          <Input className="mt-0.5" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </label>
-        <label className="block mb-2 text-sm">
-          {t('workflowDefs.icon')}
-          <Input className="mt-0.5" value={icon} onChange={(e) => setIcon(e.target.value)} />
-        </label>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <label className="block text-sm">
+            {t('workflowDefs.name')}
+            <Input className="mt-0.5" value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            {t('workflowDefs.description')}
+            <Input className="mt-0.5" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            {t('workflowDefs.icon')}
+            <Input className="mt-0.5" value={icon} onChange={(e) => setIcon(e.target.value)} />
+          </label>
+        </div>
         {def && (
-          <label className="flex items-center gap-2 mb-2 text-sm">
+          <label className="flex items-center gap-2 mb-3 text-sm">
             <input
               type="checkbox"
               checked={isActive}
@@ -202,10 +234,35 @@ function DefFormModal({
             {t('workflowDefs.active')}
           </label>
         )}
-        <label className="block mb-4 text-sm">
-          {t('workflowDefs.definition')}
-          <Textarea className="mt-0.5 font-mono text-xs" rows={14} value={definitionStr} onChange={(e) => setDefinitionStr(e.target.value)} />
-        </label>
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium">{t('workflowDefs.definition')}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleValidate}>Validate</Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowSource((v) => !v)}>
+              {showSource ? 'Hide Source' : 'View Source'}
+            </Button>
+          </div>
+        </div>
+        {showSource && (
+          <Textarea
+            className="mb-3 font-mono text-xs"
+            rows={8}
+            value={JSON.stringify(definition, null, 2)}
+            onChange={(e) => {
+              try {
+                setDefinition(JSON.parse(e.target.value))
+              } catch { /* ignore invalid json */ }
+            }}
+          />
+        )}
+        <div className="flex-1 min-h-[400px] mb-4">
+          <ReactFlowProvider>
+            <WorkflowEditor
+              initialDefinition={definition}
+              onChange={setDefinition}
+            />
+          </ReactFlowProvider>
+        </div>
         <div className="flex gap-2">
           <Button className="flex-1" onClick={handleSave} disabled={saving || !name.trim()}>
             {saving ? t('common.saving') : t('common.save')}

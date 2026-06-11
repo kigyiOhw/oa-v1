@@ -73,6 +73,8 @@ export const workflowDefApi = {
     is_active?: boolean
   }) => api.put<DefinitionItem>(`/workflow-defs/${id}`, data),
   delete: (id: number) => api.delete(`/workflow-defs/${id}`),
+  validate: (definition: Record<string, unknown>) =>
+    api.post<{ valid: boolean; errors: string[] }>('/workflow-defs/validate', { definition }),
 }
 
 export const workflowApi = {
