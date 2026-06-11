@@ -4,11 +4,23 @@ from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, DBDep, require_permission
 from app.core.permissions import Permissions
+from app.repositories.request_type import RequestTypeRepository
 from app.schemas.expense import ExpenseCreate, ExpenseOut, ExpenseUpdate, PaginatedExpenses
 from app.services.expense import ExpenseService
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 logger = logging.getLogger(__name__)
+
+
+@router.get("/types", response_model=list[dict[str, str]])
+async def list_expense_types(
+    db: DBDep,
+    current_user: CurrentUser,
+) -> list[dict[str, str]]:
+    logger.info("----------expenses.list_expense_types")
+    repo = RequestTypeRepository(db)
+    items = await repo.list_by_module("expense")
+    return [{"code": i.code, "name": i.name} for i in items]
 
 
 @router.get("", response_model=PaginatedExpenses)
@@ -44,7 +56,6 @@ async def create_draft(
     logger.info("----------expenses.create_draft, start, user_id=%s, type=%s", current_user.id, data.expense_type)
     service = ExpenseService(db)
     result = await service.create_draft(current_user, data)
-    await db.commit()
     logger.info("----------expenses.create_draft, done, expense_id=%s, user_id=%s", result.id, current_user.id)
     return result
 
@@ -77,7 +88,6 @@ async def update_draft(
     logger.info("----------expenses.update_draft, start, expense_id=%s, user_id=%s", expense_id, current_user.id)
     service = ExpenseService(db)
     result = await service.update_draft(current_user, expense_id, data)
-    await db.commit()
     logger.info("----------expenses.update_draft, done, expense_id=%s", expense_id)
     return result
 
@@ -91,7 +101,6 @@ async def delete_draft(
     logger.info("----------expenses.delete_draft, start, expense_id=%s, user_id=%s", expense_id, current_user.id)
     service = ExpenseService(db)
     await service.delete_draft(current_user, expense_id)
-    await db.commit()
     logger.info("----------expenses.delete_draft, done, expense_id=%s", expense_id)
 
 
@@ -104,7 +113,6 @@ async def submit_expense(
     logger.info("----------expenses.submit_expense, start, expense_id=%s, user_id=%s", expense_id, current_user.id)
     service = ExpenseService(db)
     result = await service.submit(current_user, expense_id)
-    await db.commit()
     logger.info("----------expenses.submit_expense, done, expense_id=%s, instance_id=%s", expense_id, result.workflow_instance_id)
     return result
 
@@ -118,6 +126,5 @@ async def cancel_expense(
     logger.info("----------expenses.cancel_expense, start, expense_id=%s, user_id=%s", expense_id, current_user.id)
     service = ExpenseService(db)
     result = await service.cancel(current_user, expense_id)
-    await db.commit()
     logger.info("----------expenses.cancel_expense, done, expense_id=%s", expense_id)
     return result

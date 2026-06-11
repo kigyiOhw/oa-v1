@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 @router.get("", response_model=PaginatedMediaFiles)
 async def list_media(
     db: Annotated = Depends(get_db),
+    current_user: Annotated = Depends(get_current_user),
+    _perm: None = require_permission(Permissions.MEDIA_READ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
 ) -> PaginatedMediaFiles:
@@ -32,7 +34,6 @@ async def upload_media(
 ) -> MediaFileOut:
     service = MediaService(db)
     media = await service.upload(file, current_user)
-    await db.commit()
     return media
 
 
@@ -44,5 +45,4 @@ async def delete_media(
     _perm: None = require_permission(Permissions.MEDIA_DELETE),
 ) -> None:
     service = MediaService(db)
-    await service.delete(media_id)
-    await db.commit()
+    await service.delete(media_id, current_user)

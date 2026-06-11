@@ -42,7 +42,6 @@ async def create_announcement(
 ) -> AnnouncementOut:
     service = AnnouncementService(db)
     ann = await service.create(data, current_user)
-    await db.commit()
     return ann
 
 
@@ -56,7 +55,6 @@ async def update_announcement(
 ) -> AnnouncementOut:
     service = AnnouncementService(db)
     ann = await service.update(ann_id, data)
-    await db.commit()
     return ann
 
 
@@ -69,4 +67,3 @@ async def delete_announcement(
 ) -> None:
     service = AnnouncementService(db)
     await service.delete(ann_id)
-    await db.commit()

@@ -44,7 +44,6 @@ async def create_draft(
     logger.info("----------overtimes.create_draft, start, user_id=%s", current_user.id)
     service = OvertimeService(db)
     result = await service.create_draft(current_user, data)
-    await db.commit()
     logger.info("----------overtimes.create_draft, done, overtime_id=%s, user_id=%s", result.id, current_user.id)
     return result
 
@@ -77,7 +76,6 @@ async def update_draft(
     logger.info("----------overtimes.update_draft, start, overtime_id=%s, user_id=%s", overtime_id, current_user.id)
     service = OvertimeService(db)
     result = await service.update_draft(current_user, overtime_id, data)
-    await db.commit()
     logger.info("----------overtimes.update_draft, done, overtime_id=%s", overtime_id)
     return result
 
@@ -91,7 +89,6 @@ async def delete_draft(
     logger.info("----------overtimes.delete_draft, start, overtime_id=%s, user_id=%s", overtime_id, current_user.id)
     service = OvertimeService(db)
     await service.delete_draft(current_user, overtime_id)
-    await db.commit()
     logger.info("----------overtimes.delete_draft, done, overtime_id=%s", overtime_id)
 
 
@@ -104,7 +101,6 @@ async def submit_overtime(
     logger.info("----------overtimes.submit_overtime, start, overtime_id=%s, user_id=%s", overtime_id, current_user.id)
     service = OvertimeService(db)
     result = await service.submit(current_user, overtime_id)
-    await db.commit()
     logger.info("----------overtimes.submit_overtime, done, overtime_id=%s, instance_id=%s",
                 overtime_id, result.workflow_instance_id)
     return result
@@ -119,6 +115,5 @@ async def cancel_overtime(
     logger.info("----------overtimes.cancel_overtime, start, overtime_id=%s, user_id=%s", overtime_id, current_user.id)
     service = OvertimeService(db)
     result = await service.cancel(current_user, overtime_id)
-    await db.commit()
     logger.info("----------overtimes.cancel_overtime, done, overtime_id=%s", overtime_id)
     return result
