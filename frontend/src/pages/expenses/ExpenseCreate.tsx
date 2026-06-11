@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { expenseApi } from '../../api/expense'
+import { requestTypeApi } from '../../api/requestTypes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -14,19 +15,30 @@ export default function ExpenseCreate() {
   const isEdit = !!id
   const navigate = useNavigate()
 
-  const EXPENSE_TYPE_OPTIONS = [
-    { value: 'travel', label: t('expense.typeLabels.travel') },
-    { value: 'office', label: t('expense.typeLabels.office') },
-    { value: 'entertainment', label: t('expense.typeLabels.entertainment') },
-    { value: 'other', label: t('expense.typeLabels.other') },
-  ]
-
+  const [expenseTypeOptions, setExpenseTypeOptions] = useState<{ value: string; label: string }[]>([])
   const [expenseType, setExpenseType] = useState('travel')
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [attachmentUrls, setAttachmentUrls] = useState('')
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    requestTypeApi.list('expense').then((res) => {
+      const opts = res.data.map((item) => ({ value: item.code, label: item.name }))
+      setExpenseTypeOptions(opts)
+      if (opts.length > 0 && !isEdit) {
+        setExpenseType(opts[0].value)
+      }
+    }).catch(() => {
+      setExpenseTypeOptions([
+        { value: 'travel', label: t('expense.typeLabels.travel') },
+        { value: 'office', label: t('expense.typeLabels.office') },
+        { value: 'entertainment', label: t('expense.typeLabels.entertainment') },
+        { value: 'other', label: t('expense.typeLabels.other') },
+      ])
+    })
+  }, [t, isEdit])
 
   useEffect(() => {
     if (!id) return
@@ -105,7 +117,7 @@ export default function ExpenseCreate() {
             value={expenseType}
             onChange={(e) => setExpenseType(e.target.value)}
           >
-            {EXPENSE_TYPE_OPTIONS.map((opt) => (
+            {expenseTypeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Select>

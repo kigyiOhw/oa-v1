@@ -21,6 +21,15 @@ export interface PaginatedLeaves {
   page_size: number
 }
 
+export interface LeaveBalanceItem {
+  id: number
+  user_id: number
+  year: number
+  leave_type: string
+  total_days: number
+  used_days: number
+}
+
 const LEAVE_TYPES: Record<string, string> = {
   sick: 'Sick Leave',
   personal: 'Personal Leave',
@@ -70,4 +79,6 @@ export const leaveApi = {
   submit: (id: number) => api.post<LeaveItem>(`/leaves/${id}/submit`),
 
   cancel: (id: number) => api.post<LeaveItem>(`/leaves/${id}/cancel`),
+
+  getBalance: (year?: number) => api.get<LeaveBalanceItem[]>('/leaves/balance', { params: year ? { year } : undefined }),
 }

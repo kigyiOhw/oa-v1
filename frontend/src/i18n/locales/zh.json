@@ -32,7 +32,17 @@
     "backToAdmin": "← 返回管理",
     "saveSuccess": "已保存",
     "saveFailed": "保存失败",
-    "requiredFields": "请填写所有必填项"
+    "requiredFields": "请填写所有必填项",
+    "expand": "展开",
+    "collapse": "折叠",
+    "switchToEnglish": "Switch to English",
+    "switchToChinese": "切换到中文",
+    "langLabel": "中",
+    "selectPlaceholder": "-- 请选择 --",
+    "timeJustNow": "刚刚",
+    "timeMinutesAgo": "{{n}}分钟前",
+    "timeHoursAgo": "{{n}}小时前",
+    "timeDaysAgo": "{{n}}天前"
   },
   "validation": {
     "required": "此字段为必填项",
@@ -61,7 +71,15 @@
     "registerNow": "立即注册",
     "goLogin": "去登录",
     "loginFailed": "登录失败",
-    "registerFailed": "注册失败"
+    "registerFailed": "注册失败",
+    "sessionExpired": "登录已过期，请重新登录",
+    "changePassword": "修改密码",
+    "oldPassword": "旧密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "passwordChanged": "密码已修改",
+    "passwordChangeFailed": "密码修改失败"
   },
   "dashboard": {
     "title": "OA 工作台",
@@ -126,7 +144,8 @@
     "media": "媒体管理",
     "settings": "公司设置",
     "employees": "员工管理",
-    "auditLogs": "审计日志"
+    "auditLogs": "审计日志",
+    "requestTypes": "类型配置"
   },
   "users": {
     "title": "用户管理",
@@ -191,9 +210,34 @@
     "icon": "图标",
     "version": "版本",
     "active": "启用",
-    "definition": "流程定义 (JSON)",
+    "definition": "流程图",
     "deleteConfirm": "确定删除此流程定义？",
     "invalidJson": "JSON 格式错误"
+  },
+  "workflowEditor": {
+    "nodeTypes": {
+      "start": "开始",
+      "approval": "审批",
+      "condition": "条件",
+      "end": "结束"
+    },
+    "properties": {
+      "label": "标签",
+      "assigneeType": "审批人类型",
+      "assigneeValue": "审批人值",
+      "assigneeChain": "审批链",
+      "outcome": "结果"
+    },
+    "actions": {
+      "addNode": "添加节点",
+      "delete": "删除",
+      "validate": "校验",
+      "autoLayout": "自动布局"
+    },
+    "validation": {
+      "ok": "流程定义合法",
+      "errors": "校验失败"
+    }
   },
   "announcements": {
     "title": "标题",
@@ -307,7 +351,9 @@
       "approved": "已通过",
       "rejected": "已驳回",
       "cancelled": "已取消"
-    }
+    },
+    "annualLeaveBalance": "年假余额",
+    "days": "天"
   },
   "employee": {
     "title": "员工管理",
@@ -357,7 +403,8 @@
     "noItemsToTransfer": "无待交接内容",
     "resignConfirm": "确认办理离职？此操作将：\n1. 转移 {subordinates} 位下属给交接人\n2. 转交 {tasks} 个待办任务\n3. 归还所有持有资产\n4. 将员工状态设为「已离职」",
     "resignSuccess": "离职手续已办理",
-    "deleteConfirm": "确定删除此员工档案？"
+    "deleteConfirm": "确定删除此员工档案？",
+    "resignHint": "{{name}} 将被设为「已离职」。请选择交接人以接收其下属、待办任务和资产。"
   },
   "notFound": {
     "title": "页面不存在",
@@ -476,7 +523,8 @@
     "lowStock": "库存不足",
     "noConsumables": "暂无耗材",
     "deleteConfirm": "确定删除此耗材？",
-    "insufficientStock": "库存不足，当前库存 {stock} {unit}"
+    "insufficientStock": "库存不足，当前库存 {stock} {unit}",
+    "unitPlaceholder": "个/箱/包..."
   },
   "expense": {
     "myExpenses": "我的报销",
@@ -527,6 +575,7 @@
     "details": "详情",
     "startDate": "开始日期",
     "endDate": "结束日期",
+    "ip": "IP",
     "records": "条"
   },
   "messages": {
@@ -587,6 +636,13 @@
       "rejected": "已驳回",
       "cancelled": "已取消"
     }
+  },
+  "requestTypes": {
+    "title": "类型配置",
+    "name": "名称",
+    "namePlaceholder": "请输入显示名称",
+    "sortOrder": "排序",
+    "deleteConfirm": "确定删除此类型？已提交的申请不受影响。"
   },
   "errorBoundary": {
     "title": "出错了",

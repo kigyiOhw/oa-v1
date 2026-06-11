@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { leaveApi, LeaveItem, leaveTypeLabel, leaveStatusColor } from '../../api/leave'
+import { leaveApi, LeaveItem, leaveTypeLabel, leaveStatusColor, LeaveBalanceItem } from '../../api/leave'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +18,7 @@ export default function MyLeaves() {
   const pageSize = 20
   const [loading, setLoading] = useState(true)
   const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
+  const [balances, setBalances] = useState<LeaveBalanceItem[]>([])
 
   const fetchLeaves = async () => {
     try {
@@ -30,8 +31,16 @@ export default function MyLeaves() {
     finally { setLoading(false) }
   }
 
+  const fetchBalances = async () => {
+    try {
+      const res = await leaveApi.getBalance()
+      setBalances(res.data)
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => {
     fetchLeaves()
+    fetchBalances()
   }, [page, statusFilter])
 
   const confirmAction = (message: string, action: () => Promise<void>) => {
@@ -60,6 +69,8 @@ export default function MyLeaves() {
     { value: 'cancelled', label: t('leave.statusLabels.cancelled') },
   ]
 
+  const annualBalance = balances.find((b) => b.leave_type === 'annual')
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link to="/" className="text-blue-600 hover:underline text-sm mb-4 inline-block">{t('common.backToHome')}</Link>
@@ -69,6 +80,16 @@ export default function MyLeaves() {
           + {t('leave.newLeave')}
         </Button>
       </div>
+
+      {annualBalance && (
+        <div className="mb-4 rounded-lg border bg-white p-4 flex items-center gap-4">
+          <div className="text-sm text-gray-500">{t('leave.annualLeaveBalance')}</div>
+          <div className="text-2xl font-bold text-blue-600">
+            {annualBalance.total_days - annualBalance.used_days}
+            <span className="text-sm font-normal text-gray-400 ml-1">/ {annualBalance.total_days} {t('leave.days')}</span>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 flex gap-2 flex-wrap">
         {statusFilters.map((s) => (

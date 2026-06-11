@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft, Users, Shield, Building2, GitBranch, Megaphone,
   Image, FolderTree, Laptop, Box, Clock, FileText, Settings,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Tag,
 } from 'lucide-react'
 import { useAuthStore } from '../stores/auth'
 
@@ -24,6 +24,7 @@ const navIconMap: Record<string, React.ReactNode> = {
   '/admin/attendance-config': <Clock size={18} />,
   '/admin/audit-logs': <FileText size={18} />,
   '/admin/settings': <Settings size={18} />,
+  '/admin/request-types': <Tag size={18} />,
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { to: '/admin/attendance-config', label: t('attendance.config'), permission: 'attendance:update' },
     { to: '/admin/audit-logs', label: t('admin.auditLogs'), permission: 'audit:read' },
     { to: '/admin/settings', label: t('admin.settings'), permission: 'announcement:update' },
+    { to: '/admin/request-types', label: t('admin.requestTypes'), permission: 'announcement:update' },
   ]
 
   return (
@@ -78,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button
             onClick={toggleCollapse}
             className="ml-auto text-slate-400 hover:text-white transition-colors shrink-0"
-            title={collapsed ? 'Expand' : 'Collapse'}
+            title={collapsed ? t('common.expand') : t('common.collapse')}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>

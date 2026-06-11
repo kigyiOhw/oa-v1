@@ -32,7 +32,17 @@
     "backToAdmin": "← Back to Admin",
     "saveSuccess": "Saved",
     "saveFailed": "Save failed",
-    "requiredFields": "Please fill in all required fields"
+    "requiredFields": "Please fill in all required fields",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "switchToEnglish": "Switch to English",
+    "switchToChinese": "切换到中文",
+    "langLabel": "EN",
+    "selectPlaceholder": "-- Please Select --",
+    "timeJustNow": "just now",
+    "timeMinutesAgo": "{{n}}m ago",
+    "timeHoursAgo": "{{n}}h ago",
+    "timeDaysAgo": "{{n}}d ago"
   },
   "validation": {
     "required": "This field is required",
@@ -61,7 +71,15 @@
     "registerNow": "Register Now",
     "goLogin": "Go to Login",
     "loginFailed": "Login failed",
-    "registerFailed": "Registration failed"
+    "registerFailed": "Registration failed",
+    "sessionExpired": "Session expired, please log in again",
+    "changePassword": "Change Password",
+    "oldPassword": "Old Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordChanged": "Password changed",
+    "passwordChangeFailed": "Failed to change password"
   },
   "dashboard": {
     "title": "OA Workspace",
@@ -126,7 +144,8 @@
     "media": "Media",
     "settings": "Company Settings",
     "employees": "Employees",
-    "auditLogs": "Audit Logs"
+    "auditLogs": "Audit Logs",
+    "requestTypes": "Request Types"
   },
   "users": {
     "title": "Users",
@@ -191,9 +210,34 @@
     "icon": "Icon",
     "version": "Version",
     "active": "Active",
-    "definition": "Definition (JSON)",
+    "definition": "Flowchart",
     "deleteConfirm": "Delete this workflow definition?",
     "invalidJson": "Invalid JSON"
+  },
+  "workflowEditor": {
+    "nodeTypes": {
+      "start": "Start",
+      "approval": "Approval",
+      "condition": "Condition",
+      "end": "End"
+    },
+    "properties": {
+      "label": "Label",
+      "assigneeType": "Assignee Type",
+      "assigneeValue": "Assignee Value",
+      "assigneeChain": "Assignee Chain",
+      "outcome": "Outcome"
+    },
+    "actions": {
+      "addNode": "Add Node",
+      "delete": "Delete",
+      "validate": "Validate",
+      "autoLayout": "Auto Layout"
+    },
+    "validation": {
+      "ok": "Definition is valid",
+      "errors": "Validation failed"
+    }
   },
   "announcements": {
     "title": "Title",
@@ -307,7 +351,9 @@
       "approved": "Approved",
       "rejected": "Rejected",
       "cancelled": "Cancelled"
-    }
+    },
+    "annualLeaveBalance": "Annual Leave Balance",
+    "days": "days"
   },
   "employee": {
     "title": "Employee Management",
@@ -357,7 +403,8 @@
     "noItemsToTransfer": "No items to transfer",
     "resignConfirm": "Confirm resignation? This will:\n1. Transfer {subordinates} subordinates to the successor\n2. Reassign {tasks} pending tasks\n3. Return all assigned assets\n4. Set employment status to \"Resigned\"",
     "resignSuccess": "Resignation processed",
-    "deleteConfirm": "Delete this employee profile?"
+    "deleteConfirm": "Delete this employee profile?",
+    "resignHint": "{{name}} will be set to \"Resigned\". Please select a successor to receive their subordinates, pending tasks, and assets."
   },
   "notFound": {
     "title": "Page Not Found",
@@ -476,7 +523,8 @@
     "lowStock": "Low Stock",
     "noConsumables": "No consumables",
     "deleteConfirm": "Delete this consumable?",
-    "insufficientStock": "Insufficient stock: {stock} {unit}"
+    "insufficientStock": "Insufficient stock: {stock} {unit}",
+    "unitPlaceholder": "pcs/box/pack..."
   },
   "expense": {
     "myExpenses": "My Expense Reports",
@@ -525,6 +573,7 @@
     "operator": "Operator",
     "time": "Time",
     "details": "Details",
+    "ip": "IP",
     "startDate": "Start Date",
     "endDate": "End Date",
     "records": "records"
@@ -587,6 +636,13 @@
       "rejected": "Rejected",
       "cancelled": "Cancelled"
     }
+  },
+  "requestTypes": {
+    "title": "Request Types",
+    "name": "Name",
+    "namePlaceholder": "Enter display name",
+    "sortOrder": "Sort Order",
+    "deleteConfirm": "Delete this type? Existing requests are not affected."
   },
   "errorBoundary": {
     "title": "Something went wrong",

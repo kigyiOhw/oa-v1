@@ -50,6 +50,7 @@ import MyOvertimes from './pages/overtimes/MyOvertimes'
 import OvertimeCreate from './pages/overtimes/OvertimeCreate'
 import OvertimeDetail from './pages/overtimes/OvertimeDetail'
 import AuditLogs from './pages/admin/AuditLogs'
+import RequestTypes from './pages/admin/RequestTypes'
 import MessagesPage from './pages/messages/MessagesPage'
 import MessageDetail from './pages/messages/MessageDetail'
 import MessageCompose from './pages/messages/MessageCompose'
@@ -251,6 +252,14 @@ function App() {
               element={
                 <PermissionGuard permission="audit:read">
                   <AuditLogs />
+                </PermissionGuard>
+              }
+            />
+            <Route
+              path="request-types"
+              element={
+                <PermissionGuard permission="announcement:update">
+                  <RequestTypes />
                 </PermissionGuard>
               }
             />

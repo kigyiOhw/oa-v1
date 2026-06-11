@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { leaveApi } from '../../api/leave'
+import { requestTypeApi } from '../../api/requestTypes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -14,13 +15,7 @@ export default function LeaveCreate() {
   const isEdit = !!id
   const navigate = useNavigate()
 
-  const LEAVE_TYPE_OPTIONS = [
-    { value: 'annual', label: t('leave.typeLabels.annual') },
-    { value: 'sick', label: t('leave.typeLabels.sick') },
-    { value: 'personal', label: t('leave.typeLabels.personal') },
-    { value: 'other', label: t('leave.typeLabels.other') },
-  ]
-
+  const [leaveTypeOptions, setLeaveTypeOptions] = useState<{ value: string; label: string }[]>([])
   const [leaveType, setLeaveType] = useState('annual')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -28,6 +23,24 @@ export default function LeaveCreate() {
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    requestTypeApi.list('leave').then((res) => {
+      const opts = res.data.map((item) => ({ value: item.code, label: item.name }))
+      setLeaveTypeOptions(opts)
+      if (opts.length > 0 && !isEdit) {
+        setLeaveType(opts[0].value)
+      }
+    }).catch(() => {
+      // fallback to hardcoded
+      setLeaveTypeOptions([
+        { value: 'annual', label: t('leave.typeLabels.annual') },
+        { value: 'sick', label: t('leave.typeLabels.sick') },
+        { value: 'personal', label: t('leave.typeLabels.personal') },
+        { value: 'other', label: t('leave.typeLabels.other') },
+      ])
+    })
+  }, [t, isEdit])
 
   useEffect(() => {
     if (!id) return
@@ -113,7 +126,7 @@ export default function LeaveCreate() {
             value={leaveType}
             onChange={(e) => setLeaveType(e.target.value)}
           >
-            {LEAVE_TYPE_OPTIONS.map((opt) => (
+            {leaveTypeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Select>

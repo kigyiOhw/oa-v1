@@ -29,7 +29,14 @@ export interface AuthResponse {
   }
 }
 
+export interface ChangePasswordData {
+  old_password: string
+  new_password: string
+  confirm_password: string
+}
+
 export const authApi = {
   login: (data: LoginData) => api.post<AuthResponse>('/auth/login', data),
   register: (data: RegisterData) => api.post<AuthResponse>('/auth/register', data),
+  changePassword: (data: ChangePasswordData) => api.put<{ message: string }>('/auth/me/password', data),
 }

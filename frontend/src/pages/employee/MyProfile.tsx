@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { employeeApi, type EmployeeProfile } from '../../api/employees'
+import { authApi } from '../../api/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
+import FormField from '@/components/ui/form-field'
 
 const EDUCATION_LEVELS = ['high_school', 'associate', 'bachelor', 'master', 'doctor', 'other']
 
@@ -18,10 +20,17 @@ export default function MyProfile() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editContact, setEditContact] = useState(false)
+  const [editPassword, setEditPassword] = useState(false)
 
   // Contact fields (always editable)
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+
+  // Password fields
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwdErrors, setPwdErrors] = useState<Record<string, string>>({})
 
   // Onboarding fields
   const [birthday, setBirthday] = useState('')
@@ -62,6 +71,47 @@ export default function MyProfile() {
       setSuccess(t('common.saveSuccess'))
     } catch (err: any) {
       setError(err.response?.data?.detail || t('common.saveFailed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const validatePassword = (): boolean => {
+    const errs: Record<string, string> = {}
+    if (!oldPassword) errs.oldPassword = t('validation.required')
+    if (!newPassword) errs.newPassword = t('validation.required')
+    else if (newPassword.length < 6) errs.newPassword = t('validation.minLength').replace('{n}', '6')
+    if (!confirmPassword) errs.confirmPassword = t('validation.required')
+    else if (newPassword !== confirmPassword) errs.confirmPassword = t('auth.passwordMismatch')
+    setPwdErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleChangePassword = async () => {
+    if (!validatePassword()) return
+    setSaving(true)
+    setError('')
+    setSuccess('')
+    try {
+      await authApi.changePassword({
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      })
+      setOldPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setEditPassword(false)
+      setSuccess(t('auth.passwordChanged'))
+    } catch (err: any) {
+      const detail = err.response?.data?.detail
+      if (typeof detail === 'string') {
+        setError(detail)
+      } else if (Array.isArray(detail)) {
+        setError(detail.map((d: any) => d.msg || d.message).join(', '))
+      } else {
+        setError(t('auth.passwordChangeFailed'))
+      }
     } finally {
       setSaving(false)
     }
@@ -249,6 +299,40 @@ export default function MyProfile() {
               <div>
                 <span className="text-gray-500">{t('employee.address')}</span>
                 <p className="font-medium">{profile.address || '—'}</p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Password change */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-800">{t('auth.password')}</h2>
+            {!editPassword && (
+              <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setEditPassword(true)}>
+                {t('auth.changePassword')}
+              </Button>
+            )}
+          </div>
+
+          {editPassword && (
+            <div className="space-y-3">
+              <FormField label={t('auth.oldPassword')} error={pwdErrors.oldPassword} required>
+                <Input type="password" value={oldPassword} onChange={(e) => { setOldPassword(e.target.value); setPwdErrors((p) => { const n = { ...p }; delete n.oldPassword; return n }) }} />
+              </FormField>
+              <FormField label={t('auth.newPassword')} error={pwdErrors.newPassword} required>
+                <Input type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPwdErrors((p) => { const n = { ...p }; delete n.newPassword; return n }) }} />
+              </FormField>
+              <FormField label={t('auth.confirmPassword')} error={pwdErrors.confirmPassword} required>
+                <Input type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPwdErrors((p) => { const n = { ...p }; delete n.confirmPassword; return n }) }} />
+              </FormField>
+              <div className="flex gap-2">
+                <Button onClick={handleChangePassword} disabled={saving}>
+                  {saving ? t('common.saving') : t('common.save')}
+                </Button>
+                <Button variant="secondary" onClick={() => { setEditPassword(false); setOldPassword(''); setNewPassword(''); setConfirmPassword(''); setPwdErrors({}) }}>
+                  {t('common.cancel')}
+                </Button>
               </div>
             </div>
           )}
