@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 import { employeeApi, type EmployeeProfile } from '../../api/employees'
 import { userApi, type UserItem } from '../../api/users'
 import { Button } from '@/components/ui/button'
@@ -9,13 +8,13 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 const EDUCATION_LEVELS = ['high_school', 'associate', 'bachelor', 'master', 'doctor', 'other']
 
 export default function EmployeeDetail() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const [profile, setProfile] = useState<EmployeeProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -140,9 +139,11 @@ export default function EmployeeDetail() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-4">
-        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/admin/employees')}><ArrowLeft size={14} className="inline" /> {t('employee.employeeList')}</Button>
-      </div>
+      <Breadcrumb items={[
+        { label: t('admin.title'), href: '/admin' },
+        { label: t('employee.employeeList'), href: '/admin/employees' },
+        { label: profile.full_name || profile.username },
+      ]} />
       <h1 className="text-2xl font-bold mb-6">
         {profile.full_name || profile.username} — {t('employee.employeeDetail')}
       </h1>
@@ -291,7 +292,7 @@ export default function EmployeeDetail() {
           <div className="bg-white rounded-lg p-6 w-[480px] max-h-[80vh] overflow-auto">
             <h2 className="text-lg font-bold mb-4">{t('employee.resignTitle')}</h2>
             <p className="text-sm text-gray-600 mb-4">
-              {profile.full_name || profile.username} 将被设为「已离职」。请选择交接人以接收其下属、待办任务和资产。
+              {t('employee.resignHint', { name: profile.full_name || profile.username })}
             </p>
 
             <div className="space-y-4">
@@ -301,7 +302,7 @@ export default function EmployeeDetail() {
                   value={successorId ?? ''}
                   onChange={(e) => setSuccessorId(Number(e.target.value))}
                 >
-                  <option value="">-- 请选择 --</option>
+                  <option value="">{t('common.selectPlaceholder')}</option>
                   {users
                     .filter((u) => u.id !== profile.user_id)
                     .map((u) => (

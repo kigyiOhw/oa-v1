@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '@/components/ui/toast'
-import { ArrowLeft } from 'lucide-react'
 import { expenseApi, ExpenseItem, expenseTypeLabel, expenseStatusColor } from '../../api/expense'
 import { workflowApi, HistoryItem } from '../../api/workflow'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 import ConfirmDialog from '@/components/ui/confirm-dialog'
 
 export default function ExpenseDetail() {
@@ -64,12 +64,11 @@ export default function ExpenseDetail() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="flex gap-4 mb-4">
-        <Link to="/" className="text-blue-600 hover:underline text-sm">{t('common.backToHome')}</Link>
-        <Button variant="link" size="sm" className="h-auto p-0" onClick={() => navigate('/expenses')}>
-          <ArrowLeft size={14} className="inline" /> {t('expense.backToMyExpenses')}
-        </Button>
-      </div>
+      <Breadcrumb items={[
+        { label: t('common.backToHome').replace('← ', ''), href: '/' },
+        { label: t('expense.myExpenses'), href: '/expenses' },
+        { label: `${expenseTypeLabel(expense.expense_type)} ${t('expense.expenseDetail')}` },
+      ]} />
 
       <div className="bg-white rounded-lg border p-6 mb-6">
         <h1 className="text-xl font-bold mb-4">

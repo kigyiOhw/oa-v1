@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Mail, Reply, Trash2 } from 'lucide-react'
+import { Mail, Reply, Trash2 } from 'lucide-react'
 import { messageApi, type MessageDetail } from '../../api/messages'
 import { useMessageStore } from '../../stores/messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 export default function MessageDetail() {
   const { t } = useTranslation()
@@ -90,10 +91,11 @@ export default function MessageDetail() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-2xl px-4 py-6">
-        <Link to="/messages" className="text-blue-600 hover:underline text-sm mb-4 inline-flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3" />
-          {t('messages.backToMessages')}
-        </Link>
+        <Breadcrumb items={[
+          { label: t('common.backToHome').replace('← ', ''), href: '/' },
+          { label: t('messages.title'), href: '/messages' },
+          { label: msg.subject },
+        ]} />
 
         <Card>
           <CardHeader>

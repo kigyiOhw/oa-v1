@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import { consumableApi, type ConsumableDetail as ConsumableDetailType } from '../../api/consumables'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -9,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 export default function ConsumableDetail() {
   const { t } = useTranslation()
@@ -102,9 +102,11 @@ export default function ConsumableDetail() {
   if (isEdit || isCreate) {
     return (
       <div>
-        <Button variant="link" size="sm" className="h-auto p-0 mb-4" onClick={() => navigate('/admin/consumables')}>
-          <ArrowLeft size={14} className="inline" /> {t('consumable.title')}
-        </Button>
+        <Breadcrumb items={[
+          { label: t('admin.title'), href: '/admin' },
+          { label: t('consumable.title'), href: '/admin/consumables' },
+          { label: isCreate ? t('consumable.createConsumable') : t('consumable.editConsumable') },
+        ]} />
         <h1 className="text-2xl font-bold mb-6">{isCreate ? t('consumable.createConsumable') : t('consumable.editConsumable')}</h1>
 
         <div className="rounded-lg bg-white p-6 shadow max-w-2xl space-y-4">
@@ -121,7 +123,7 @@ export default function ConsumableDetail() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('consumable.unit')}</label>
-              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="个/箱/包..." />
+              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={t('consumable.unitPlaceholder')} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">{t('consumable.safetyStock')}</label>
@@ -151,9 +153,11 @@ export default function ConsumableDetail() {
 
   return (
     <div>
-      <Button variant="link" size="sm" className="h-auto p-0 mb-4" onClick={() => navigate('/admin/consumables')}>
-        <ArrowLeft size={14} className="inline" /> {t('consumable.title')}
-      </Button>
+      <Breadcrumb items={[
+        { label: t('admin.title'), href: '/admin' },
+        { label: t('consumable.title'), href: '/admin/consumables' },
+        { label: item.name },
+      ]} />
       <h1 className="text-2xl font-bold mb-6">{item.name}</h1>
 
       <div className="rounded-lg bg-white p-6 shadow space-y-6 max-w-2xl">

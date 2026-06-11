@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import { assetApi, type AssetDetail as AssetDetailType, assetStatusLabel, assetStatusColor } from '../../api/assets'
 import { userApi, type UserItem } from '../../api/users'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 
 export default function AssetDetail() {
   const { t } = useTranslation()
@@ -77,9 +77,11 @@ export default function AssetDetail() {
 
   return (
     <div>
-      <Button variant="link" size="sm" className="h-auto p-0 mb-4" onClick={() => navigate('/admin/assets')}>
-        <ArrowLeft size={14} className="inline" /> {t('asset.title')}
-      </Button>
+      <Breadcrumb items={[
+        { label: t('admin.title'), href: '/admin' },
+        { label: t('asset.title'), href: '/admin/assets' },
+        { label: asset.name },
+      ]} />
       <h1 className="text-2xl font-bold mb-6">{asset.name} — {t('asset.editAsset')}</h1>
 
       {error && <div className="mb-4 rounded bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
