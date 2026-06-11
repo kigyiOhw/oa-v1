@@ -65,6 +65,9 @@ docs
 
 # Codex (personal IDE config)
 .codex/
+
+# Kimi Code CLI
+.kimi-code/
 AGENTS.md
 
 # Uploaded media files

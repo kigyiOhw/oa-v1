@@ -2,7 +2,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Enterprise OA (Office Automation) system centered around configurable approval workflows. Phase 1-15 complete. Phase 16 planned: skeleton loading + empty states + animations + dark mode + recharts visualization. Phase 17: internal messaging + refinements. See PLAN.md for details.
+Enterprise OA (Office Automation) system centered around configurable approval workflows. See PLAN.md for current phase status and roadmap.
 
 ## Common Commands
 
