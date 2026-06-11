@@ -55,13 +55,14 @@ logs/
 *.log
 npm-debug.log*
 
-docs
+# Documentation (planning docs not committed)
+docs/
 
 # Claude Code internal files
-.claude/context/
-.claude/memory/
-.claude/plans/
-.claude/settings.json
+.claude/
+
+# Agents config
+.agents/
 
 # Codex (personal IDE config)
 .codex/
@@ -77,3 +78,4 @@ backend/uploads/*
 # Alembic
 # alembic/versions/*.py
 # !alembic/versions/.gitkeep
+PLAN.md
