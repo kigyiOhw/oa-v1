@@ -64,10 +64,12 @@ class MediaService:
         logger.info("Media uploaded | id=%d type=%s title=%s", media.id, media.file_type, media.title)
         return media
 
-    async def delete(self, media_id: int) -> None:
+    async def delete(self, media_id: int, user: User) -> None:
         media = await self.repo.get_by_id(media_id)
         if not media:
             raise OAException("Media file not found", status_code=404)
+        if media.uploaded_by != user.id and not user.is_superuser:
+            raise OAException("Access denied", status_code=403)
         await self.storage.delete(media.file_path)
         await self.repo.delete(media)
-        logger.info("Media deleted | id=%d", media_id)
+        logger.info("Media deleted | id=%d by user=%d", media_id, user.id)

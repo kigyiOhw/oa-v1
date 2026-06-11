@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   super_admin: <Crown size={16} className="inline" />,
@@ -23,6 +25,7 @@ export default function Roles() {
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<RoleItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchRoles = async () => {
     try {
@@ -42,10 +45,20 @@ export default function Roles() {
     fetchRoles()
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('roles.deleteConfirm'))) return
-    await roleApi.delete(id)
-    fetchRoles()
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('roles.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await roleApi.delete(id)
+          fetchRoles()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   const typeLabel = (roleType: string) => {
@@ -130,6 +143,16 @@ export default function Roles() {
           allPermissions={permissions}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); fetchRoles() }}
+        />
+      )}
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
         />
       )}
     </div>

@@ -6,14 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field
 class OvertimeCreate(BaseModel):
     start_time: datetime
     end_time: datetime
-    duration_hours: float = Field(..., gt=0)
+    duration_hours: float = Field(..., gt=0, le=168)
     reason: str = Field(..., min_length=1, max_length=2000)
 
 
 class OvertimeUpdate(BaseModel):
     start_time: datetime | None = None
     end_time: datetime | None = None
-    duration_hours: float | None = Field(None, gt=0)
+    duration_hours: float | None = Field(None, gt=0, le=168)
     reason: str | None = Field(None, max_length=2000)
 
 

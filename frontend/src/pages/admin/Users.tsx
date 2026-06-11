@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 export default function Users() {
   const { t } = useTranslation()
@@ -15,6 +17,7 @@ export default function Users() {
   const [search, setSearch] = useState('')
   const [editing, setEditing] = useState<UserItem | null>(null)
   const [loading, setLoading] = useState(true)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchUsers = async () => {
     try {
@@ -29,10 +32,20 @@ export default function Users() {
     fetchUsers()
   }, [page, search])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('users.deleteConfirm'))) return
-    await userApi.delete(id)
-    fetchUsers()
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('users.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await userApi.delete(id)
+          fetchUsers()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   return (
@@ -116,6 +129,16 @@ export default function Users() {
 
       {editing && (
         <EditUserModal user={editing} onClose={() => setEditing(null)} onSaved={fetchUsers} />
+      )}
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
       )}
     </div>
   )

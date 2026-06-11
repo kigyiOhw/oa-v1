@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
@@ -68,7 +68,7 @@ export default function Dashboard() {
   useEffect(() => {
     settingsApi.getCompanyInfo().then((res) => setCompanyInfo(res.data)).catch(() => {})
     announcementApi.listPublished(1, 10).then((res) => setAnnouncements(res.data.items)).catch(() => {})
-    mediaApi.list(1, 20).then((res) => setMediaFiles(res.data.items)).catch(() => {})
+    mediaApi.list(1, 20).then((res) => setMediaFiles(res.data.items.filter(f => f.file_type !== 'document'))).catch(() => {})
     settingsApi.getQuickLinks().then((res) => setQuickLinks(res.data)).catch(() => {})
   }, [])
 
@@ -81,13 +81,28 @@ export default function Dashboard() {
       .finally(() => setStatsLoading(false))
   }, [isAuthenticated])
 
-  useEffect(() => {
-    if (mediaFiles.length === 0) return
-    const timer = setInterval(() => {
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  const startTimer = useCallback(() => {
+    stopTimer()
+    if (mediaFiles.length <= 1) return
+    timerRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % mediaFiles.length)
     }, 4000)
-    return () => clearInterval(timer)
-  }, [mediaFiles.length])
+  }, [mediaFiles.length, stopTimer])
+
+  useEffect(() => {
+    if (mediaFiles.length === 0) return
+    startTimer()
+    return () => stopTimer()
+  }, [mediaFiles.length, startTimer, stopTimer])
 
   const handleShortcut = (to: string, requiresAuth: boolean) => {
     if (requiresAuth && !isAuthenticated) {
@@ -427,12 +442,27 @@ export default function Dashboard() {
         <Card className="overflow-hidden">
           <h3 className="px-4 pt-4 text-lg font-semibold text-gray-900 dark:text-foreground">{t('dashboard.sections.companyStyle')}</h3>
           {mediaFiles.length > 0 ? (
-            <div className="relative aspect-video bg-gray-100 dark:bg-muted">
-              <img
-                src={mediaFiles[currentSlide]?.file_path}
-                alt={mediaFiles[currentSlide]?.title}
-                className="w-full h-full object-contain"
-              />
+            <div
+              className="relative aspect-video bg-gray-100 dark:bg-muted"
+              onMouseEnter={stopTimer}
+              onMouseLeave={startTimer}
+            >
+              {mediaFiles[currentSlide]?.file_type === 'video' ? (
+                <video
+                  src={mediaFiles[currentSlide]?.file_path}
+                  controls
+                  className="w-full h-full object-contain"
+                  onPlay={stopTimer}
+                  onPause={startTimer}
+                  onEnded={startTimer}
+                />
+              ) : (
+                <img
+                  src={mediaFiles[currentSlide]?.file_path}
+                  alt={mediaFiles[currentSlide]?.title}
+                  className="w-full h-full object-contain"
+                />
+              )}
               {mediaFiles.length > 1 && (
                 <>
                   <button className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/50"

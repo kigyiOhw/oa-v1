@@ -4,7 +4,7 @@ export interface MediaFile {
   id: number
   title: string
   file_path: string
-  file_type: 'image' | 'video'
+  file_type: 'image' | 'video' | 'document'
   file_size: number
   mime_type: string
   uploaded_by: number

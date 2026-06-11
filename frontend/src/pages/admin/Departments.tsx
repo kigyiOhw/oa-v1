@@ -5,6 +5,8 @@ import { deptApi, DepartmentTreeItem, DepartmentItem } from '../../api/departmen
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 export default function Departments() {
   const { t } = useTranslation()
@@ -12,6 +14,7 @@ export default function Departments() {
   const [flattened, setFlattened] = useState<DepartmentItem[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<DepartmentItem | null>(null)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchData = async () => {
     const [treeRes, listRes] = await Promise.all([deptApi.tree(), deptApi.list()])
@@ -23,10 +26,20 @@ export default function Departments() {
     fetchData()
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('departments.deleteConfirm'))) return
-    await deptApi.delete(id)
-    fetchData()
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('departments.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await deptApi.delete(id)
+          fetchData()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   return (
@@ -66,6 +79,16 @@ export default function Departments() {
           flattened={flattened}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); fetchData() }}
+        />
+      )}
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
         />
       )}
     </div>

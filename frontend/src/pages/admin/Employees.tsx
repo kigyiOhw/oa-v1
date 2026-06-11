@@ -7,6 +7,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 export default function Employees() {
   const { t } = useTranslation()
@@ -18,6 +20,7 @@ export default function Employees() {
   const [departmentId, setDepartmentId] = useState<number | undefined>()
   const [statusFilter, setStatusFilter] = useState('')
   const [departments, setDepartments] = useState<DepartmentItem[]>([])
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchEmployees = useCallback(async () => {
     const res = await employeeApi.list({
@@ -39,10 +42,20 @@ export default function Employees() {
     deptApi.list().then((r) => setDepartments(r.data))
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('employee.deleteConfirm'))) return
-    await employeeApi.delete(id)
-    fetchEmployees()
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('employee.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await employeeApi.delete(id)
+          fetchEmployees()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   return (
@@ -120,6 +133,16 @@ export default function Employees() {
           {t('common.next')}
         </Button>
       </div>
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </div>
   )
 }

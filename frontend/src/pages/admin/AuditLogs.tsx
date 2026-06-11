@@ -135,7 +135,7 @@ export default function AuditLogs() {
               <TableHead>{t('auditLogs.action')}</TableHead>
               <TableHead>{t('auditLogs.resourceType')}</TableHead>
               <TableHead>{t('auditLogs.resourceId')}</TableHead>
-              <TableHead>IP</TableHead>
+              <TableHead>{t('auditLogs.ip')}</TableHead>
               <TableHead>{t('auditLogs.details')}</TableHead>
             </TableRow>
           </TableHeader>

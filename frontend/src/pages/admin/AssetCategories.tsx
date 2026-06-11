@@ -5,6 +5,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 export default function AssetCategories() {
   const { t } = useTranslation()
@@ -16,6 +18,7 @@ export default function AssetCategories() {
   const [parentId, setParentId] = useState<number | null>(null)
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -50,10 +53,20 @@ export default function AssetCategories() {
     finally { setSaving(false) }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('common.delete') + '?')) return
-    await assetApi.deleteCategory(id)
-    fetchCategories()
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('common.delete') + '?',
+      onConfirm: async () => {
+        try {
+          await assetApi.deleteCategory(id)
+          fetchCategories()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   const allCategories = flatten(categories)
@@ -92,6 +105,16 @@ export default function AssetCategories() {
         </TableBody>
       </Table>
 
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
       {showForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">

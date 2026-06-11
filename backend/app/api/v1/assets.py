@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 # ── Categories ──
 
 @cat_router.get("", response_model=list[AssetCategoryOut])
-async def list_categories(db: DBDep) -> list[AssetCategoryOut]:
+async def list_categories(
+    db: DBDep,
+    current_user: CurrentUser,
+) -> list[AssetCategoryOut]:
     service = AssetService(db)
     categories = await service.list_categories()
     return [_build_category_tree(c, categories) for c in categories if c.parent_id is None]

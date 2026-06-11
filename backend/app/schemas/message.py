@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class MessageSend(BaseModel):
     recipient_id: int
     subject: str = Field(..., min_length=1, max_length=200)
-    body: str = Field(..., min_length=1)
+    body: str = Field(..., min_length=1, max_length=10000)
 
 
 class MessageOut(BaseModel):

@@ -5,6 +5,8 @@ import { consumableApi, type ConsumableItem } from '../../api/consumables'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import { useToastStore } from '@/stores/toast'
 
 export default function Consumables() {
   const { t } = useTranslation()
@@ -13,6 +15,7 @@ export default function Consumables() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [confirmState, setConfirmState] = useState<{open: boolean; title: string; message: string; onConfirm: () => void} | null>(null)
 
   const fetchItems = useCallback(async () => {
     const res = await consumableApi.list({
@@ -26,12 +29,20 @@ export default function Consumables() {
 
   useEffect(() => { fetchItems() }, [fetchItems])
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(t('consumable.deleteConfirm'))) return
-    try {
-      await consumableApi.delete(id)
-      fetchItems()
-    } catch { /* handled by axios */ }
+  const handleDelete = (id: number) => {
+    setConfirmState({
+      open: true,
+      title: t('common.confirm'),
+      message: t('consumable.deleteConfirm'),
+      onConfirm: async () => {
+        try {
+          await consumableApi.delete(id)
+          fetchItems()
+        } catch (e: any) {
+          useToastStore.getState().addToast('error', e.response?.data?.detail || t('common.saveFailed'))
+        }
+      },
+    })
   }
 
   const isLowStock = (item: ConsumableItem) => item.current_stock <= item.safety_stock
@@ -105,6 +116,16 @@ export default function Consumables() {
           {t('common.next')}
         </Button>
       </div>
+      {confirmState && (
+        <ConfirmDialog
+          open={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          variant="destructive"
+          onConfirm={() => { confirmState.onConfirm(); setConfirmState(null) }}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </div>
   )
 }

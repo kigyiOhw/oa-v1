@@ -22,16 +22,19 @@ function TypeIcon({ type }: { type: string }) {
   }
 }
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(dateStr).toLocaleDateString()
+function useRelativeTime() {
+  const { t } = useTranslation()
+  return (dateStr: string): string => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return t('common.timeJustNow')
+    if (mins < 60) return t('common.timeMinutesAgo', { n: mins })
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return t('common.timeHoursAgo', { n: hours })
+    const days = Math.floor(hours / 24)
+    if (days < 7) return t('common.timeDaysAgo', { n: days })
+    return new Date(dateStr).toLocaleDateString()
+  }
 }
 
 export default function NotificationsPage() {
@@ -46,6 +49,7 @@ export default function NotificationsPage() {
   const loading = useNotificationStore((s) => s.loading)
   const fetchNotifications = useNotificationStore((s) => s.fetchNotifications)
   const markRead = useNotificationStore((s) => s.markRead)
+  const relativeTime = useRelativeTime()
 
   useEffect(() => {
     fetchNotifications(page, pageSize, tab === 'unread')

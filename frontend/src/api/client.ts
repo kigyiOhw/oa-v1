@@ -1,4 +1,6 @@
 import axios from 'axios'
+import i18n from '@/i18n'
+import { useToastStore } from '@/stores/toast'
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -34,8 +36,8 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
-          alert('登录已过期，请重新登录')
-          window.location.href = '/login'
+          useToastStore.getState().addToast('error', i18n.t('auth.sessionExpired'))
+          setTimeout(() => { window.location.href = '/login' }, 1500)
         }
       } else {
         window.location.href = '/login'
