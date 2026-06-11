@@ -26,6 +26,7 @@ from app.api.v1.leave import router as leave_router
 from app.api.v1.overtime import router as overtime_router
 from app.api.v1.media import router as media_router
 from app.api.v1.messages import router as messages_router
+from app.api.v1.request_types import router as request_types_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.permissions import router as permissions_router
 from app.api.v1.roles import router as roles_router
@@ -159,6 +160,7 @@ app.include_router(messages_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(leave_router, prefix="/api/v1")
 app.include_router(media_router, prefix="/api/v1")
+app.include_router(request_types_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 app.include_router(expense_router, prefix="/api/v1")
 app.include_router(overtime_router, prefix="/api/v1")

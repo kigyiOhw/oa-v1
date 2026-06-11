@@ -4,11 +4,23 @@ from fastapi import APIRouter, Query, status
 
 from app.api.deps import CurrentUser, DBDep, require_permission
 from app.core.permissions import Permissions
-from app.schemas.leave import LeaveCreate, LeaveOut, LeaveUpdate, PaginatedLeaves
+from app.repositories.request_type import RequestTypeRepository
+from app.schemas.leave import LeaveBalanceOut, LeaveCreate, LeaveOut, LeaveUpdate, PaginatedLeaves
 from app.services.leave import LeaveService
 
 router = APIRouter(prefix="/leaves", tags=["leaves"])
 logger = logging.getLogger(__name__)
+
+
+@router.get("/types", response_model=list[dict[str, str]])
+async def list_leave_types(
+    db: DBDep,
+    current_user: CurrentUser,
+) -> list[dict[str, str]]:
+    logger.info("----------leaves.list_leave_types")
+    repo = RequestTypeRepository(db)
+    items = await repo.list_by_module("leave")
+    return [{"code": i.code, "name": i.name} for i in items]
 
 
 @router.get("", response_model=PaginatedLeaves)
@@ -32,6 +44,19 @@ async def list_my_leaves(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/balance", response_model=list[LeaveBalanceOut])
+async def get_leave_balance(
+    db: DBDep,
+    current_user: CurrentUser,
+    year: int | None = Query(None),
+) -> list[LeaveBalanceOut]:
+    logger.info("----------leaves.get_leave_balance, start, user_id=%s, year=%s", current_user.id, year)
+    service = LeaveService(db)
+    balances = await service.get_balance(current_user.id, year)
+    logger.info("----------leaves.get_leave_balance, done, user_id=%s, count=%s", current_user.id, len(balances))
+    return [LeaveBalanceOut.model_validate(b) for b in balances]
 
 
 @router.post("", response_model=LeaveOut, status_code=status.HTTP_201_CREATED)

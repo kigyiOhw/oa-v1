@@ -38,6 +38,17 @@ class LeaveOut(BaseModel):
     updated_at: datetime
 
 
+class LeaveBalanceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    year: int
+    leave_type: str
+    total_days: float
+    used_days: float
+
+
 class PaginatedLeaves(BaseModel):
     items: list[LeaveOut]
     total: int

@@ -92,3 +92,14 @@ class AuthService:
         access_token = create_access_token({"sub": str(user.id)})
         refresh_token = create_refresh_token({"sub": str(user.id)})
         return access_token, refresh_token, user
+
+    async def change_password(self, user: User, old_password: str, new_password: str) -> None:
+        logger.info("----------AuthService.change_password, start, user_id=%s", user.id)
+        if not await verify_password_async(old_password, user.hashed_password):
+            logger.warning("----------AuthService.change_password, wrong_old_password, user_id=%s", user.id)
+            raise OAException("Incorrect old password", status_code=401)
+
+        user.hashed_password = await get_password_hash_async(new_password)
+        await self.user_repo.update(user)
+        await self.session.commit()
+        logger.info("----------AuthService.change_password, done, user_id=%s", user.id)

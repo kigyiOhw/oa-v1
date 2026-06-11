@@ -6,11 +6,13 @@ from app.models.consumable import Consumable, ConsumableRecord
 from app.models.department import Department
 from app.models.employee import EmployeeProfile
 from app.models.expense_request import ExpenseRequest
+from app.models.leave_balance import LeaveBalance
 from app.models.leave_request import LeaveRequest
 from app.models.media import MediaFile
 from app.models.message import Message
 from app.models.notification import Notification
 from app.models.overtime_request import OvertimeRequest
+from app.models.request_type import RequestType
 from app.models.setting import Setting
 from app.models.user import Permission, Role, User
 from app.models.workflow import WorkflowDef, WorkflowHistory, WorkflowInstance, WorkflowTask
@@ -22,6 +24,6 @@ __all__ = [
     "Announcement", "Asset", "AssetAssignment", "AssetCategory",
     "AttendanceRecord",
     "Consumable", "ConsumableRecord",
-    "EmployeeProfile", "ExpenseRequest", "LeaveRequest", "MediaFile",
-    "Message", "Notification", "OvertimeRequest", "Setting",
+    "EmployeeProfile", "ExpenseRequest", "LeaveBalance", "LeaveRequest", "MediaFile",
+    "Message", "Notification", "OvertimeRequest", "RequestType", "Setting",
 ]

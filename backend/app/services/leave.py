@@ -1,10 +1,13 @@
 """Leave request service — inherits common CRUD from DraftWorkflowService."""
 
 import logging
+from datetime import datetime
 
 from app.core.exceptions import OAException
+from app.models.leave_balance import LeaveBalance
 from app.models.leave_request import LeaveRequest
 from app.models.user import User
+from app.repositories.leave_balance import LeaveBalanceRepository
 from app.repositories.leave_request import LeaveRequestRepository
 from app.schemas.leave import LeaveCreate, LeaveUpdate
 from app.services.workflow.draft_service import DraftWorkflowService
@@ -19,6 +22,7 @@ class LeaveService(DraftWorkflowService[LeaveRequest, LeaveCreate, LeaveUpdate])
     def __init__(self, session):
         super().__init__(session)
         self.repo = LeaveRequestRepository(session)
+        self.balance_repo = LeaveBalanceRepository(session)
 
     # -- API-compatible wrappers -----------------------------------------
 
@@ -28,6 +32,50 @@ class LeaveService(DraftWorkflowService[LeaveRequest, LeaveCreate, LeaveUpdate])
 
     async def get_leave(self, leave_id: int) -> LeaveRequest:
         return await self.get(leave_id)
+
+    async def get_balance(self, user_id: int, year: int | None = None) -> list[LeaveBalance]:
+        target_year = year or datetime.now().year
+        return await self.balance_repo.get_by_user_and_year(user_id, target_year)
+
+    # -- Balance helpers -------------------------------------------------
+
+    async def _ensure_balance(self, user_id: int, leave_type: str, year: int) -> LeaveBalance:
+        balances = await self.balance_repo.get_by_user_and_year(user_id, year)
+        for b in balances:
+            if b.leave_type == leave_type:
+                return b
+        # Auto-create with default annual quota if annual leave
+        total = 10.0 if leave_type == "annual" else 0.0
+        balance = LeaveBalance(
+            user_id=user_id,
+            year=year,
+            leave_type=leave_type,
+            total_days=total,
+            used_days=0.0,
+        )
+        return await self.balance_repo.create(balance)
+
+    async def _deduct_balance(self, leave: LeaveRequest) -> None:
+        year = leave.start_date.year
+        balance = await self._ensure_balance(leave.user_id, leave.leave_type, year)
+        days = float(leave.duration_days)
+        if balance.total_days > 0 and balance.used_days + days > balance.total_days:
+            raise OAException("Insufficient leave balance", status_code=400)
+        balance.used_days = float(balance.used_days) + days
+        await self.balance_repo.update(balance)
+        logger.info("LeaveService._deduct_balance | user=%s type=%s year=%s used=%s/%s",
+                    leave.user_id, leave.leave_type, year, balance.used_days, balance.total_days)
+
+    async def _restore_balance(self, leave: LeaveRequest) -> None:
+        year = leave.start_date.year
+        balances = await self.balance_repo.get_by_user_and_year(leave.user_id, year)
+        for balance in balances:
+            if balance.leave_type == leave.leave_type:
+                balance.used_days = max(0.0, float(balance.used_days) - float(leave.duration_days))
+                await self.balance_repo.update(balance)
+                logger.info("LeaveService._restore_balance | user=%s type=%s year=%s used=%s/%s",
+                            leave.user_id, leave.leave_type, year, balance.used_days, balance.total_days)
+                break
 
     # -- hook overrides --------------------------------------------------
 
@@ -85,6 +133,12 @@ class LeaveService(DraftWorkflowService[LeaveRequest, LeaveCreate, LeaveUpdate])
             instance_repo = WorkflowInstanceRepository(self.session)
             instance = await instance_repo.get_by_id(leave.workflow_instance_id)
             if instance:
+                # Balance management
+                if instance.status == "approved" and old_status != "approved":
+                    await self._deduct_balance(leave)
+                elif old_status == "approved" and instance.status in ("rejected", "cancelled"):
+                    await self._restore_balance(leave)
+
                 attendance_svc = AttendanceService(self.session)
                 if instance.status == "approved":
                     await attendance_svc.sync_leave_record(leave, approved=True)

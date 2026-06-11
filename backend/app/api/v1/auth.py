@@ -2,11 +2,12 @@ import logging
 
 from fastapi import APIRouter, Request, status
 
-from app.api.deps import DBDep
+from app.api.deps import CurrentUser, DBDep
 from app.core.exceptions import OAException
 from app.core.limiter import limiter
 from app.repositories.user import UserRepository
 from app.schemas.auth import (
+    ChangePasswordRequest,
     LoginRequest,
     RefreshRequest,
     TokenResponse,
@@ -73,3 +74,16 @@ async def refresh(request: Request, data: RefreshRequest, db: DBDep) -> dict[str
     access_token = create_access_token({"sub": str(user_id)})
     logger.info("----------auth.refresh, done, user_id=%s", user_id)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.put("/me/password")
+async def change_password(
+    data: ChangePasswordRequest,
+    db: DBDep,
+    current_user: CurrentUser,
+) -> dict[str, str]:
+    logger.info("----------auth.change_password, start, user_id=%s", current_user.id)
+    service = AuthService(db)
+    await service.change_password(current_user, data.old_password, data.new_password)
+    logger.info("----------auth.change_password, done, user_id=%s", current_user.id)
+    return {"message": "Password changed successfully"}
